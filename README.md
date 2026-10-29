@@ -1,2 +1,3 @@
-# spotlight-content
-Spotlight Adz social media content (reels, carousels) for scheduling
+# Spotlight Adz content
+
+Public media for @spotlightadzagency posts, scheduled through Metricool.
