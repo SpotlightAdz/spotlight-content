@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<title>Spotlight Adz Trailer</title>
+<style>
+@font-face { font-family: Readex; src: url(fonts/readex-500.ttf); font-weight: 500; }
+@font-face { font-family: Readex; src: url(fonts/readex-600.ttf); font-weight: 600; }
+@font-face { font-family: Readex; src: url(fonts/readex-700.ttf); font-weight: 700; }
+@font-face { font-family: SG; src: url(fonts/space-grotesk-500.ttf); font-weight: 500; }
+@font-face { font-family: SG; src: url(fonts/space-grotesk-600.ttf); font-weight: 600; }
+@font-face { font-family: SG; src: url(fonts/space-grotesk-700.ttf); font-weight: 700; }
+@font-face { font-family: IT; src: url(fonts/inter-tight-500.ttf); font-weight: 500; }
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #05040c; }
+#gl { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+#stage { position: absolute; inset: 0; perspective: 1700px; perspective-origin: 50% 46%; }
+.scene { position: absolute; inset: 0; transform-style: preserve-3d; display: none; }
+.abs { position: absolute; }
+.ar { font-family: Readex, sans-serif; direction: rtl; }
+.sg { font-family: SG, sans-serif; letter-spacing: -0.02em; }
+.it { font-family: IT, sans-serif; }
+.c { left: 0; right: 0; text-align: center; }
+.white { color: #fff; text-shadow: 0 0 30px rgba(255,255,255,.25); }
+.shim { background: linear-gradient(90deg,#FFB800,#FF7A1A,#FF3D6E,#D926B3,#8C46FF,#2F7BFF,#22D3EE,#FFB800,#FF7A1A,#FF3D6E);
+  background-size: 400% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(255,70,160,.55)) drop-shadow(0 0 60px rgba(120,80,255,.35)); }
+.glass { background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+  backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border: 1.5px solid rgba(255,255,255,.26); border-radius: 44px;
+  box-shadow: 0 40px 90px rgba(0,0,0,.5), inset 0 1.5px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(255,255,255,.08); }
+.rim { position: absolute; inset: -2px; border-radius: inherit; padding: 2px; pointer-events: none;
+  background: conic-gradient(from var(--a,0deg), #FFB800, #FF3D6E, #D926B3, #8C46FF, #2F7BFF, #22D3EE, #FFB800);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  filter: drop-shadow(0 0 14px rgba(255,90,180,.8)); }
+.pill { border-radius: 999px; padding: 18px 40px; display: inline-block; }
+.tag { position: absolute; top: 250px; left: 0; right: 0; text-align: center; }
+.tag span { font-family: SG; font-weight: 600; font-size: 34px; letter-spacing: .18em; color: rgba(255,255,255,.9); }
+.chip { position: absolute; font-family: SG; font-weight: 600; font-size: 38px; color: #fff; padding: 20px 34px; border-radius: 999px; white-space: nowrap; }
+.num { font-family: SG; font-weight: 700; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; mix-blend-mode: screen; pointer-events: none; }
+#vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 80% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%); }
+.heart { position: absolute; width: 70px; height: 70px; }
+svg { overflow: visible; }
+</style>
+</head>
+<body>
+<canvas id="gl" width="540" height="960"></canvas>
+<div id="stage"></div>
+<div id="vig"></div>
+<div id="flash"></div>
+<script type="module">
+import * as THREE from './assets/three.module.min.js';
+
+// ---------------- timing (128 BPM) ----------------
+const BPM = 128, BEAT = 60 / BPM, BAR = BEAT * 4;
+const T = {
+  hookEnd: 2 * BAR, logoEnd: 4 * BAR,                         // 3.75, 7.5
+  svc: i => 4 * BAR + i * 3 * BAR,                            // 6 services, 3 bars each
+  proof: 22 * BAR, cta: 24 * BAR, end: 24 * BAR + 3.6 * BAR    // 41.25, 45, ~51.75
+};
+window.TOTAL = T.end;
+
+// ---------------- helpers ----------------
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, d) => cl((t - a) / d);
+const eo = x => 1 - Math.pow(1 - cl(x), 3);
+const eio = x => { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eb = x => { x = cl(x); const c1 = 1.7, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const es = (x, k = 6, w = 12) => { x = cl(x); return x >= 1 ? 1 : 1 - Math.exp(-k * x) * Math.cos(w * x); };
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstChild; };
+function S(el, o) {           // set transform & style
+  const tr = `translate3d(${o.x||0}px,${o.y||0}px,${o.z||0}px) rotateX(${o.rx||0}deg) rotateY(${o.ry||0}deg) rotateZ(${o.r||0}deg) scale(${o.s===undefined?1:o.s})`;
+  el.style.transform = tr;
+  if (o.o !== undefined) el.style.opacity = o.o;
+  if (o.blur !== undefined) el.style.filter = o.blur > .2 ? `blur(${o.blur}px)` : '';
+}
+const SPEC = ['#FFB800','#FF7A1A','#FF3D6E','#D926B3','#8C46FF','#2F7BFF','#22D3EE'];
+
+// ---------------- icons ----------------
+const IC = {
+  social: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M50 84 C20 64 10 48 10 34 C10 22 20 13 31 13 C40 13 46 18 50 25 C54 18 60 13 69 13 C80 13 90 22 90 34 C90 48 80 64 50 84Z" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg>`,
+  ads: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M14 40 L60 20 L60 80 L14 60 Z M60 34 C76 36 76 64 60 66 M24 62 L30 86 L42 86 L38 64" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></svg>`,
+  web: `<svg viewBox="0 0 100 100" width="100%" height="100%"><rect x="10" y="18" width="80" height="54" rx="8" fill="none" stroke="#fff" stroke-width="7"/><path d="M34 86 L66 86 M50 72 L50 86 M10 32 L90 32" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
+  sys: `<svg viewBox="0 0 100 100" width="100%" height="100%"><rect x="12" y="12" width="32" height="32" rx="7" fill="none" stroke="#fff" stroke-width="7"/><rect x="56" y="12" width="32" height="32" rx="7" fill="none" stroke="#fff" stroke-width="7"/><rect x="12" y="56" width="32" height="32" rx="7" fill="none" stroke="#fff" stroke-width="7"/><rect x="56" y="56" width="32" height="32" rx="7" fill="#fff"/></svg>`,
+  brand: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M50 10 L72 50 L50 90 L28 50 Z M50 10 L50 58 M50 58 a6 6 0 1 0 0.1 0" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/></svg>`,
+  ai: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M46 10 C49 34 56 41 80 44 C56 47 49 54 46 78 C43 54 36 47 12 44 C36 41 43 34 46 10Z" fill="#fff"/><path d="M78 66 C79 74 82 77 90 78 C82 79 79 82 78 90 C77 82 74 79 66 78 C74 77 77 74 78 66Z" fill="#fff"/></svg>`,
+  chat: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M50 12 C28 12 12 27 12 46 C12 56 16 64 23 70 L18 88 L37 79 C41 80 45 81 50 81 C72 81 88 66 88 46 C88 27 72 12 50 12Z" fill="#fff"/><path d="M38 34 C36 44 44 56 58 60 L64 54 L56 48 L52 52 C46 49 43 45 42 40 L46 36 L40 28Z" fill="#25D366"/></svg>`,
+  check: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M18 52 L40 74 L84 26" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+};
+const SERVICES = [
+  ['social', 'سوشيال ميديا'], ['ads', 'إعلانات'], ['web', 'مواقع و تطبيقات'],
+  ['sys', 'سيستيمات'], ['brand', 'براندينغ'], ['ai', 'ذكاء اصطناعي']];
+
+// ---------------- WebGL background ----------------
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(540, 960, false);
+const scene = new THREE.Scene(); const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const U = { uT: { value: 0 }, uEdge: { value: 0 }, uEnergy: { value: .6 }, uWarp: { value: 0 }, uFlash: { value: 0 }, uHue: { value: 0 }, uDark: { value: 1 } };
+const frag = `
+precision highp float; varying vec2 vUv;
+uniform float uT, uEdge, uEnergy, uWarp, uFlash, uHue, uDark;
+vec3 spec(float u){ u = fract(u)*7.0;
+  vec3 c[7]; c[0]=vec3(1.,.72,0.); c[1]=vec3(1.,.48,.10); c[2]=vec3(1.,.24,.43); c[3]=vec3(.85,.15,.70); c[4]=vec3(.55,.27,1.); c[5]=vec3(.18,.48,1.); c[6]=vec3(.13,.83,.93);
+  int i = int(floor(u)); float f = fract(u); vec3 a = c[0], b = c[1];
+  for(int k=0;k<7;k++){ if(k==i){ a=c[k]; b=c[k==6?0:k+1]; } } return mix(a,b,smoothstep(0.,1.,f)); }
+float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+float sdRR(vec2 p, vec2 b, float r){ vec2 q = abs(p)-b+r; return length(max(q,0.))+min(max(q.x,q.y),0.)-r; }
+void main(){
+  vec2 uv = vUv; vec2 p = (uv-.5)*vec2(1.,1.7778);
+  vec3 col = vec3(.02,.016,.05)*uDark;
+  // mesh orbs
+  for(int k=0;k<5;k++){ float fk=float(k);
+    vec2 c = vec2(.5+.33*sin(uT*.23+fk*1.9), .5+.36*cos(uT*.19+fk*1.3))-.5; c.y*=1.7778;
+    float d = length(p-c); float r = .55+.12*sin(uT*.3+fk);
+    col += spec(fk*.19+uT*.02+uHue)*exp(-d*d/(r*r)*2.4)*.38*uEnergy; }
+  // warp streaks
+  if(uWarp>.001){ float a = atan(p.y,p.x); float r = length(p);
+    float n = 180.; float cell = floor(a/6.2832*n); float rnd = h21(vec2(cell, 3.1));
+    float z = fract(rnd*7. - uT*(1.2+rnd*2.) ); float len = .06+ .5*uWarp;
+    float s = smoothstep(len, 0., abs(r - z*1.4)) * smoothstep(.0, .25, r) * step(.55, rnd);
+    float w = smoothstep(.5/n, 0., abs(fract(a/6.2832*n)-.5)/n);
+    col += spec(rnd+uT*.1)*s*w*uWarp*2.2; }
+  // edge glow (screen rim)
+  float d = abs(sdRR(p, vec2(.5,.8889)-.006, .11));
+  float ang = atan(p.y, p.x)/6.2832;
+  vec3 ec = spec(ang*2.+uT*.35);
+  float wob = .72+.28*sin(ang*37.7+uT*3.);
+  col += ec*(exp(-pow(d/.006,2.))*.9 + exp(-d/.05)*.55)*uEdge*wob;
+  col += ec*exp(-d/.16)*.22*uEdge;
+  col += vec3(1.)*uFlash;
+  // vignette + grain-free tone
+  col *= 1.0 - .35*smoothstep(.6, 1.25, length(p*vec2(1.2,.75)));
+  gl_FragColor = vec4(pow(col, vec3(.95)), 1.);
+}`;
+const mat = new THREE.ShaderMaterial({ uniforms: U, vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy,0.,1.); }`, fragmentShader: frag });
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+
+// ---------------- build DOM scenes ----------------
+const stage = document.getElementById('stage');
+const scenes = {};
+function mk(id) { const s = $(`<div class="scene" id="${id}"></div>`); stage.appendChild(s); scenes[id] = s; return s; }
+
+// HOOK
+{ const s = mk('hook');
+  s.appendChild($(`<div class="abs c ar white" id="hq" style="top:300px;font-size:76px;font-weight:700">البيزنس ديالك محتاج…</div>`));
+  s.appendChild($(`<div class="abs c ar shim" id="h6" style="top:430px;font-size:120px;font-weight:700">6 ديال الفرق؟</div>`));
+  SERVICES.forEach(([k, label], i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const el = $(`<div class="abs glass" id="ht${i}" style="left:${120 + col * 440}px;top:${660 + row * 300}px;width:400px;height:260px">
+      <div class="rim" style="opacity:.0"></div>
+      <div class="abs" style="left:150px;top:34px;width:100px;height:100px">${IC[k]}</div>
+      <div class="abs c ar" style="top:160px;font-size:40px;font-weight:700;color:#fff">${label}</div>
+      <div class="abs sg" style="left:26px;top:20px;font-size:30px;font-weight:700;color:rgba(255,255,255,.6)">0${i + 1}</div></div>`);
+    s.appendChild(el); });
+  s.appendChild($(`<img class="abs" id="hlogo" src="assets/logo.webp" style="left:340px;top:640px;width:400px;height:400px">`));
+  s.appendChild($(`<div class="abs c ar white" id="hor" style="top:1120px;font-size:86px;font-weight:700">ولا…</div>`));
+  s.appendChild($(`<div class="abs c ar shim" id="hone" style="top:1230px;font-size:150px;font-weight:700">فريق واحد.</div>`));
+  const nm = $(`<div class="abs c sg white" id="hname" style="top:1460px;font-size:116px;font-weight:700"></div>`);
+  'Spotlight Adz'.split('').forEach((ch, i) => nm.appendChild($(`<span style="display:inline-block;white-space:pre" id="hn${i}">${ch}</span>`)));
+  s.appendChild(nm);
+}
+
+// generic service scene
+function svcScene(id, n, tagEN, head, sub) {
+  const s = mk(id);
+  s.appendChild($(`<div class="tag" id="${id}_tag"><span class="glass pill">0${n} · ${tagEN}</span></div>`));
+  s.appendChild($(`<div class="abs c ar shim" id="${id}_h" style="top:370px;font-size:132px;font-weight:700;white-space:nowrap"><span class="fit" style="display:inline-block">${head}</span></div>`));
+  s.appendChild($(`<div class="abs c ar" id="${id}_sub" style="top:1610px;font-size:46px;font-weight:600;color:rgba(255,255,255,.86)">${sub}</div>`));
+  return s;
+}
+
+// 01 SOCIAL
+{ const s = svcScene('social', 1, 'SOCIAL MEDIA', 'سوشيال ميديا', 'ريلز · ستوري تيلينغ · نمو كل شهر');
+  const ph = $(`<div class="abs glass" id="so_ph" style="left:320px;top:600px;width:440px;height:860px;border-radius:70px;overflow:hidden">
+    <div class="abs" id="so_feed" style="left:22px;right:22px;top:0;height:3000px"></div>
+    <div class="abs" style="left:170px;top:22px;width:100px;height:30px;border-radius:15px;background:#000"></div></div>`);
+  const feed = ph.querySelector('#so_feed');
+  for (let i = 0; i < 6; i++) feed.appendChild($(`<div style="position:absolute;left:0;right:0;top:${70 + i * 560}px;height:530px;border-radius:40px;
+     background:linear-gradient(${140 + i * 37}deg, ${SPEC[i % 7]}, ${SPEC[(i + 3) % 7]} 60%, ${SPEC[(i + 5) % 7]})">
+     <div style="position:absolute;right:26px;bottom:110px;width:54px;height:54px">${IC.social}</div>
+     <div style="position:absolute;right:26px;bottom:40px;width:54px;height:54px">${IC.chat.replace('#25D366', 'transparent')}</div>
+     <div style="position:absolute;left:28px;bottom:44px;width:220px;height:22px;border-radius:11px;background:rgba(255,255,255,.85)"></div>
+     <div style="position:absolute;left:28px;bottom:80px;width:150px;height:22px;border-radius:11px;background:rgba(255,255,255,.6)"></div></div>`));
+  s.appendChild(ph);
+  for (let i = 0; i < 14; i++) s.appendChild($(`<div class="heart" id="so_hr${i}">${IC.social.replace(/fill="none" stroke="#fff"/, `fill="${SPEC[i % 7]}" stroke="${SPEC[i % 7]}"`)}</div>`));
+  s.appendChild($(`<div class="abs glass pill" id="so_c1" style="left:60px;top:760px"><span class="num" style="font-size:64px;color:#fff" id="so_n1">0</span><span class="ar" style="font-size:34px;color:#fff;margin-right:14px"> متابع</span></div>`));
+  s.appendChild($(`<div class="abs glass pill" id="so_c2" style="right:50px;top:1180px"><span class="num" style="font-size:64px;color:#fff" id="so_n2">0</span><span class="ar" style="font-size:34px;color:#fff;margin-right:14px"> مشاهدة</span></div>`));
+  s.appendChild($(`<div class="abs it" id="so_cap" style="left:80px;top:880px;font-size:28px;color:rgba(255,255,255,.75)">Happy Fitness</div>`));
+}
+
+// 02 ADS
+{ const s = svcScene('ads', 2, 'PERFORMANCE ADS', 'إعلانات كتبيع', 'ميتا · غوغل · تيكتوك · سناب · يوتيوب');
+  s.appendChild($(`<div class="abs" id="ad_core" style="left:390px;top:860px;width:300px;height:300px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff 0%, #FFB800 18%, #FF3D6E 45%, #8C46FF 70%, rgba(47,123,255,0) 72%);
+    box-shadow:0 0 120px 40px rgba(255,61,110,.45), 0 0 260px 80px rgba(140,70,255,.35)"></div>`));
+  ['Meta', 'Google', 'TikTok', 'Snapchat', 'YouTube'].forEach((nm, i) => s.appendChild($(`<div class="chip glass" id="ad_p${i}">${nm}</div>`)));
+  s.appendChild($(`<svg class="abs" id="ad_chart" style="left:110px;top:1260px" width="860" height="260" viewBox="0 0 860 260">
+    <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#FFB800"/><stop offset=".5" stop-color="#FF3D6E"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>
+    <path id="ad_line" d="M0 230 C90 220 140 200 210 190 C300 176 330 150 420 132 C520 110 560 90 640 60 C720 32 780 22 860 6" fill="none" stroke="url(#lg)" stroke-width="12" stroke-linecap="round" style="filter:drop-shadow(0 0 14px #FF3D6E)"/></svg>`));
+  s.appendChild($(`<div class="abs c" id="ad_badges" style="top:1530px"><span class="glass pill ar" style="font-size:36px;color:#fff;font-weight:600">واتساب · الدفع عند الاستلام · الحانوت</span></div>`));
+  s.appendChild($(`<div class="abs c ar white" id="ad_kpi" style="top:580px;font-size:58px;font-weight:700">المبيعات ماشي اللايكات</div>`));
+}
+
+// 03 WEB & APPS
+{ const s = svcScene('web', 3, 'WEB & APPS', 'مواقع و تطبيقات', 'متاجر · منصات · تطبيقات على قياسك');
+  const br = $(`<div class="abs glass" id="we_br" style="left:90px;top:640px;width:760px;height:520px;border-radius:34px;overflow:hidden">
+     <div style="height:64px;border-bottom:1px solid rgba(255,255,255,.18);display:flex;gap:12px;align-items:center;padding-left:28px">
+       <i style="width:18px;height:18px;border-radius:9px;background:#FF5F57;display:block"></i><i style="width:18px;height:18px;border-radius:9px;background:#FEBC2E;display:block"></i><i style="width:18px;height:18px;border-radius:9px;background:#28C840;display:block"></i>
+       <div class="it" style="margin-left:30px;padding:8px 26px;border-radius:20px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:24px">yourstore.ma</div></div>
+     <div style="position:absolute;left:28px;right:28px;top:90px;height:200px;border-radius:24px;background:linear-gradient(120deg,#FF7A1A,#FF3D6E,#8C46FF)"></div>
+     <div style="position:absolute;left:28px;top:310px;display:flex;gap:20px">${[0, 1, 2].map(i => `<div style="width:216px;height:180px;border-radius:22px;background:rgba(255,255,255,${.12 + i * .04})"></div>`).join('')}</div></div>`);
+  s.appendChild(br);
+  const ph = $(`<div class="abs glass" id="we_ph" style="left:650px;top:800px;width:340px;height:660px;border-radius:56px;overflow:hidden">
+     <div style="position:absolute;left:24px;right:24px;top:70px;height:280px;border-radius:30px;background:linear-gradient(150deg,#FFB800,#FF3D6E 60%,#D926B3)"></div>
+     <div class="ar" style="position:absolute;right:30px;top:372px;font-size:34px;font-weight:700;color:#fff">قفطان مطرز</div>
+     <div class="ar" style="position:absolute;right:30px;top:420px;font-size:24px;color:rgba(255,255,255,.75)">التوصيل لكل المدن</div>
+     <div id="we_btn" class="ar" style="position:absolute;left:24px;right:24px;bottom:40px;height:96px;border-radius:48px;background:#25D366;color:#fff;font-size:34px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:14px">
+       <span id="we_btxt">اطلب فواتساب</span></div></div>`);
+  s.appendChild(ph);
+  ['الدفع عند الاستلام', 'AR · FR · EN', 'سريع فالتيليفون'].forEach((t, i) =>
+    s.appendChild($(`<div class="chip glass ${i === 1 ? '' : 'ar'}" id="we_c${i}" style="font-family:${i === 1 ? 'SG' : 'Readex'};font-size:36px">${t}</div>`)));
+}
+
+// 04 SYSTEMS
+{ const s = svcScene('sys', 4, 'CUSTOM SYSTEMS', 'سيستيمات على قياسك', 'POS · ERP · Kiosk · All-in-one');
+  s.querySelector('#sys_sub').classList.remove('ar'); s.querySelector('#sys_sub').classList.add('sg');
+  s.appendChild($(`<svg class="abs" id="sy_lines" style="left:0;top:0" width="1080" height="1920"></svg>`));
+  const P4 = [['POS', 'الكيسة', '#FF7A1A'], ['ERP', 'الستوك و الإنتاج', '#8C46FF'], ['Kiosk', 'الطلب بوحدك', '#22D3EE'], ['Dashboard', 'الأرقام لايف', '#FF3D6E']];
+  P4.forEach(([en, ar, c], i) => {
+    const el = $(`<div class="abs glass" id="sy_p${i}" style="left:${100 + (i % 2) * 460}px;top:${640 + Math.floor(i / 2) * 420}px;width:420px;height:360px">
+      <div style="position:absolute;left:30px;top:28px;width:16px;height:16px;border-radius:8px;background:${c};box-shadow:0 0 18px ${c}"></div>
+      <div class="sg" style="position:absolute;left:58px;top:14px;font-size:42px;font-weight:700;color:#fff">${en}</div>
+      <div class="ar" style="position:absolute;right:30px;top:78px;font-size:30px;color:rgba(255,255,255,.8)">${ar}</div>
+      <div id="sy_m${i}" style="position:absolute;left:30px;right:30px;top:140px;bottom:30px"></div></div>`);
+    s.appendChild(el);
+    const m = el.querySelector(`#sy_m${i}`);
+    if (i === 0) for (let k = 0; k < 6; k++) m.appendChild($(`<div style="position:absolute;left:${(k % 3) * 124}px;top:${Math.floor(k / 3) * 96}px;width:112px;height:84px;border-radius:18px;background:${SPEC[k]}"></div>`));
+    if (i === 1) for (let k = 0; k < 4; k++) m.appendChild($(`<div style="position:absolute;left:0;right:0;top:${k * 48}px;height:18px;border-radius:9px;background:rgba(255,255,255,.14)"><div class="sy_bar" data-v="${[.3, .8, .6, .45][k]}" style="height:100%;border-radius:9px;background:${SPEC[k + 2]};width:0"></div></div>`));
+    if (i === 2) m.appendChild($(`<div style="position:absolute;left:110px;top:0;width:140px;height:190px;border-radius:22px;border:4px solid #fff"><div style="position:absolute;left:24px;right:24px;bottom:22px;height:36px;border-radius:18px;background:#22D3EE"></div></div>`));
+    if (i === 3) m.appendChild($(`<svg width="360" height="190" viewBox="0 0 360 190"><path class="sy_dash" d="M0 170 C60 160 90 120 140 118 C190 116 210 70 260 60 C300 52 330 20 360 10" fill="none" stroke="#FF3D6E" stroke-width="10" stroke-linecap="round" style="filter:drop-shadow(0 0 10px #FF3D6E)"/></svg>`));
+  });
+  s.appendChild($(`<div class="abs glass" id="sy_hub" style="left:450px;top:930px;width:180px;height:180px;border-radius:90px;display:flex;align-items:center;justify-content:center"><div class="rim"></div><img src="assets/logo.webp" style="width:130px;height:130px"></div>`));
+  s.appendChild($(`<div class="abs c ar white" id="sy_one" style="top:1500px;font-size:64px;font-weight:700">كلشي فبلاصة وحدة</div>`));
+}
+
+// 05 BRANDING
+{ const s = svcScene('brand', 5, 'BRAND IDENTITY', 'براندينغ', 'هوية بصرية بالعربية، الفرنسية و الإنجليزية');
+  s.appendChild($(`<svg class="abs" id="br_svg" style="left:240px;top:600px" width="600" height="600" viewBox="0 0 600 600">
+    <defs><linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB800"/><stop offset=".4" stop-color="#FF3D6E"/><stop offset=".7" stop-color="#8C46FF"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>
+    <circle id="br_c1" cx="300" cy="300" r="270" fill="none" stroke="url(#bg2)" stroke-width="6" stroke-dasharray="1700" stroke-dashoffset="1700" style="filter:drop-shadow(0 0 12px #FF3D6E)"/>
+    <circle id="br_c2" cx="300" cy="300" r="215" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-dasharray="6 14"/>
+    <path id="br_g1" d="M30 300 L570 300 M300 30 L300 570" stroke="rgba(255,255,255,.18)" stroke-width="2" stroke-dasharray="560" stroke-dashoffset="560"/></svg>`));
+  s.appendChild($(`<img class="abs" id="br_logo" src="assets/logo.webp" style="left:390px;top:750px;width:300px;height:300px">`));
+  ['#FFB800', '#FF3D6E', '#D926B3', '#8C46FF', '#22D3EE'].forEach((c, i) => s.appendChild($(`<div class="abs" id="br_sw${i}" style="width:150px;height:200px;border-radius:30px;background:${c};box-shadow:0 20px 50px ${c}66">
+     <div class="sg" style="position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:24px;font-weight:600;color:#fff">${c}</div></div>`)));
+  s.appendChild($(`<div class="abs glass" id="br_type" style="left:120px;top:1260px;width:840px;height:260px;display:flex;align-items:center;justify-content:space-around">
+     <span class="sg" style="font-size:120px;font-weight:700;color:#fff">Aa</span><span class="ar" style="font-size:120px;font-weight:700;color:#fff">أب</span>
+     <span class="sg" style="font-size:40px;font-weight:600;color:rgba(255,255,255,.8)">Space Grotesk<br>Readex Pro</span></div>`));
+}
+
+// 06 AI
+{ const s = svcScene('ai', 6, 'AI & AUTOMATION', 'ذكاء اصطناعي', 'واتساب · إيميل · متابعة · ريبورتات');
+  s.appendChild($(`<div class="abs" id="ai_orb" style="left:415px;top:590px;width:250px;height:250px;border-radius:50%;
+     background:conic-gradient(from 0deg,#FFB800,#FF3D6E,#D926B3,#8C46FF,#2F7BFF,#22D3EE,#FFB800);filter:blur(18px)"></div>`));
+  s.appendChild($(`<div class="abs" id="ai_orb2" style="left:465px;top:640px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.6) 35%,rgba(255,255,255,0) 70%)"></div>`));
+  const card = $(`<div class="abs glass" id="ai_card" style="left:80px;top:930px;width:920px;height:560px"><div class="rim" id="ai_rim"></div>
+     <div style="position:absolute;right:36px;top:30px;width:90px;height:90px">${IC.chat}</div>
+     <div class="ar" style="position:absolute;right:146px;top:30px;font-size:40px;font-weight:700;color:#fff">كليان جديد</div>
+     <div class="it" style="position:absolute;right:146px;top:84px;font-size:26px;color:rgba(255,255,255,.65)">23:04</div>
+     <div class="glass ar" id="ai_m1" style="position:absolute;right:36px;top:150px;padding:22px 34px;border-radius:30px;font-size:38px;color:#fff;font-weight:600">السلام، شحال الثمن؟</div>
+     <div id="ai_typing" style="position:absolute;left:40px;top:290px;display:flex;gap:14px"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+     <div class="ar" id="ai_m2" style="position:absolute;left:36px;top:280px;padding:24px 36px;border-radius:30px;font-size:36px;color:#fff;font-weight:600;
+        background:linear-gradient(120deg,rgba(255,61,110,.55),rgba(140,70,255,.55));border:1.5px solid rgba(255,255,255,.35)">مرحبا! هاهو الكاتالوغ و الأثمنة</div>
+     <div class="sg" id="ai_tag" style="position:absolute;left:40px;top:400px;font-size:26px;color:rgba(255,255,255,.75)">Spotlight AI · reviewed by a human</div></div>`);
+  s.appendChild(card);
+  card.querySelectorAll('.dot').forEach(d => Object.assign(d.style, { width: '22px', height: '22px', borderRadius: '11px', background: '#fff', display: 'block' }));
+  ['جواب فدقايق', 'ليل و نهار', 'بنادم مسؤول'].forEach((t, i) => s.appendChild($(`<div class="chip glass ar" id="ai_c${i}" style="font-family:Readex;font-size:36px">${t}</div>`)));
+}
+
+// PROOF
+{ const s = mk('proof');
+  s.appendChild($(`<div class="abs c ar white" id="pr_h" style="top:330px;font-size:96px;font-weight:700">النتائج كتهضر</div>`));
+  [['101K', 'متابع · Happy Fitness'], ['151.2K', 'مشاهدة فريل وحدة'], ['+400%', 'كليان جداد · Aboujoud'], ['€11K+', 'اشتراكات · W Yoga Academy'], ['5.0★', 'تقييم Google']].forEach(([n, l], i) => {
+    s.appendChild($(`<div class="abs c" id="pr_n${i}" style="top:720px"><div class="num shim" style="font-size:300px;line-height:1">${n}</div>
+      <div class="ar" style="font-size:52px;color:#fff;font-weight:600;margin-top:40px">${l}</div></div>`)); });
+}
+
+// CTA
+{ const s = mk('cta');
+  s.appendChild($(`<div class="abs" id="ct_ring" style="left:240px;top:330px;width:600px;height:600px;border-radius:50%;border:2px solid rgba(255,255,255,.25)"></div>`));
+  s.appendChild($(`<img class="abs" id="ct_logo" src="assets/logo.webp" style="left:390px;top:480px;width:300px;height:300px">`));
+  SERVICES.forEach(([k], i) => s.appendChild($(`<div class="abs glass" id="ct_i${i}" style="width:110px;height:110px;border-radius:55px;display:flex;align-items:center;justify-content:center"><div style="width:58px;height:58px">${IC[k]}</div></div>`)));
+  s.appendChild($(`<div class="abs c ar white" id="ct_1" style="top:1010px;font-size:108px;font-weight:700">فريق واحد.</div>`));
+  s.appendChild($(`<div class="abs c ar shim" id="ct_2" style="top:1150px;font-size:150px;font-weight:700">كلشي.</div>`));
+  s.appendChild($(`<div class="abs c" id="ct_btn" style="top:1400px"><span class="pill ar" style="position:relative;font-size:56px;font-weight:700;color:#fff;padding:30px 70px;
+     background:linear-gradient(110deg,#FF6A3D,#FF3D7A 40%,#B14BFF 75%,#5F6DFF);box-shadow:0 0 60px rgba(255,61,122,.6)">صيفط لينا فواتساب</span></div>`));
+  s.appendChild($(`<div class="abs c sg white" id="ct_num" style="top:1580px;font-size:74px;font-weight:600">+212 701 177 915</div>`));
+  s.appendChild($(`<div class="abs c it" id="ct_web" style="top:1690px;font-size:42px;color:rgba(255,255,255,.7)">spotlightadz.ma</div>`));
+}
+const E = id => document.getElementById(id);
+
+// ---------------- per-scene animation ----------------
+function sceneEnv(t, a, b, inD = .35, outD = .3) {   // zoom-through in, blur out
+  const i = eo(P(t, a, inD)), o = eio(P(t, b - outD, outD)) * .85;
+  return { o: i * (1 - o), s: (1.25 - .25 * i) * (1 - .12 * o), blur: (1 - i) * 18 + o * 14 };
+}
+function svcCommon(id, t, a) {
+  const lt = t - a;
+  S(E(id + '_tag'), { y: (1 - eo(P(lt, .15, .5))) * -40, o: eo(P(lt, .15, .4)) });
+  const h = E(id + '_h'); S(h, { s: .7 + .3 * es(P(lt, .1, .8)), o: eo(P(lt, .1, .25)), blur: (1 - eo(P(lt, .1, .4))) * 20 });
+  h.style.backgroundPosition = `${(t * 22) % 400}% 0`;
+  S(E(id + '_sub'), { y: (1 - eo(P(lt, 1.6, .5))) * 40, o: eo(P(lt, 1.6, .4)) });
+}
+
+function aHook(t) {
+  S(E('hq'), { o: eo(P(t, .25, .35)) * (1 - eo(P(t, 3.6, .2))), blur: (1 - eo(P(t, .25, .35))) * 14, y: (1 - eo(P(t, .25, .5))) * 30 });
+  const h6 = E('h6'); S(h6, { o: eo(P(t, 2.9, .2)) * (1 - eo(P(t, 3.6, .2))), s: .5 + .5 * es(P(t, 2.9, .7)) }); h6.style.backgroundPosition = `${t * 30}% 0`;
+  const implode = eio(P(t, 3.75, .32));
+  for (let i = 0; i < 6; i++) {
+    const st = BEAT * 2 + i * BEAT * .82; const p = es(P(t, st, .55), 7, 14);
+    const col = i % 2, row = Math.floor(i / 2);
+    const cx = 120 + col * 440 + 200, cy = 660 + row * 300 + 130;
+    const shake = t > 3.35 && t < 3.75 ? (hash(i + Math.floor(t * 40)) - .5) * 18 : 0;
+    const dx = (540 - cx) * implode, dy = (840 - cy) * implode;
+    S(E('ht' + i), { o: eo(P(t, st, .12)) * (1 - eo(P(t, 3.9, .15))), s: (1.8 - .8 * p) * (1 - implode * .9), x: dx + shake, y: dy + shake * .6, r: (1 - p) * (i % 2 ? 8 : -8) + implode * 120, z: (1 - p) * 300 });
+    E('ht' + i).querySelector('.rim').style.opacity = cl(1 - (t - st) * 2.2) ;
+  }
+  const lg = es(P(t, 3.82, 1.0), 5, 10);
+  S(E('hlogo'), { o: eo(P(t, 3.82, .2)), s: Math.max(.01, lg) * (1 + .04 * Math.sin(t * 3)), r: (1 - lg) * -40 });
+  S(E('hor'), { o: eo(P(t, 3.3, .15)) * (1 - eo(P(t, 4.4, .25))), y: (1 - eo(P(t, 3.3, .3))) * 30 });
+  const one = E('hone'); S(one, { o: eo(P(t, 4.5, .2)), s: .6 + .4 * es(P(t, 4.5, .8)), y: -110 * eo(P(t, 6.3, .5)) }); one.style.backgroundPosition = `${t * 30}% 0`;
+  for (let i = 0; i < 13; i++) { const st = 6.25 + i * .055; S(E('hn' + i), { o: eo(P(t, st, .15)), y: (1 - eo(P(t, st, .35))) * 60, blur: (1 - eo(P(t, st, .3))) * 10 }); }
+  S(E('hname'), { y: -110 * eo(P(t, 6.3, .5)) });
+}
+function aSocial(t, a) {
+  const lt = t - a; svcCommon('social', t, a);
+  const ph = E('so_ph'); S(ph, { o: eo(P(lt, .3, .4)), ry: -16 * Math.sin(lt * 1.1) - (1 - eo(P(lt, .3, .9))) * 50, rx: 6, y: (1 - eo(P(lt, .3, .9))) * 300, z: (1 - eo(P(lt, .3, .9))) * -400 });
+  E('so_feed').style.transform = `translateY(${-((lt * 260) % 560) - Math.floor(lt * 260 / 560) * 560}px)`;
+  for (let i = 0; i < 14; i++) { const st = .9 + i * .28; const p = P(lt, st, 2.2);
+    S(E('so_hr' + i), { x: 300 + hash(i) * 480 + Math.sin(lt * 3 + i) * 40, y: 1400 - p * 900, o: p > 0 && p < 1 ? Math.sin(p * Math.PI) : 0, s: .6 + hash(i + 9) * .7, z: 120 }); }
+  const k1 = eio(P(lt, 1.0, 1.6)), k2 = eio(P(lt, 1.6, 1.6));
+  E('so_n1').textContent = (101.1 * k1).toFixed(1) + 'K'; E('so_n2').textContent = (151.2 * k2).toFixed(1) + 'K';
+  S(E('so_c1'), { o: eo(P(lt, .9, .3)), s: .7 + .3 * es(P(lt, .9, .7)), z: 200, y: Math.sin(lt * 1.4) * 10 });
+  S(E('so_cap'), { o: eo(P(lt, 1.2, .3)) * .9, z: 200 });
+  S(E('so_c2'), { o: eo(P(lt, 1.5, .3)), s: .7 + .3 * es(P(lt, 1.5, .7)), z: 260, y: Math.cos(lt * 1.3) * 10 });
+}
+function aAds(t, a) {
+  const lt = t - a; svcCommon('ads', t, a);
+  const core = E('ad_core'); S(core, { o: eo(P(lt, .25, .3)), s: (.3 + .7 * es(P(lt, .25, .9))) * (1 + .05 * Math.sin(lt * 8)) });
+  for (let i = 0; i < 5; i++) { const ang = lt * 1.1 + i * 2 * Math.PI / 5; const p = eo(P(lt, .5 + i * .12, .5));
+    const x = 540 + Math.cos(ang) * 380 * p, z = Math.sin(ang) * 300, y = 1010 + Math.sin(ang) * 120 * p;
+    const el = E('ad_p' + i); el.style.left = '0px'; el.style.top = '0px';
+    S(el, { x: x - el.offsetWidth / 2, y: y - 50, z, o: p * (.55 + .45 * (Math.sin(ang) + 1) / 2), s: .85 + .15 * Math.sin(ang) }); }
+  const line = E('ad_line'); const L = 1100; line.style.strokeDasharray = L; line.style.strokeDashoffset = L * (1 - eio(P(lt, 1.2, 1.8)));
+  S(E('ad_chart'), { o: eo(P(lt, 1.1, .3)) });
+  S(E('ad_kpi'), { o: eo(P(lt, .8, .3)), y: (1 - eo(P(lt, .8, .5))) * 30 });
+  S(E('ad_badges'), { o: eo(P(lt, 2.6, .3)), s: .8 + .2 * es(P(lt, 2.6, .7)) });
+}
+function aWeb(t, a) {
+  const lt = t - a; svcCommon('web', t, a);
+  const pb = eo(P(lt, .25, .9)); S(E('we_br'), { o: eo(P(lt, .25, .3)), z: -900 * (1 - pb) - 120, ry: 18 * (1 - pb) + 8, rx: 4, y: Math.sin(lt * 1.2) * 8 });
+  const pp = es(P(lt, .8, 1.0), 5, 9); S(E('we_ph'), { o: eo(P(lt, .8, .3)), z: 140 * pp - 300 * (1 - pp), ry: -14, x: (1 - pp) * 400, y: Math.cos(lt * 1.3) * 10 });
+  const press = lt > 2.6 && lt < 2.8; const done = lt > 2.8;
+  S(E('we_btn'), { s: press ? .93 : 1 }); E('we_btxt').textContent = done ? 'تم الطلب ✓' : 'اطلب فواتساب';
+  const pos = [[70, 1215], [70, 1340], [70, 1465]];
+  for (let i = 0; i < 3; i++) { const el = E('we_c' + i); el.style.left = pos[i][0] + 'px'; el.style.top = pos[i][1] + 'px';
+    S(el, { o: eo(P(lt, 1.4 + i * .3, .3)), s: .7 + .3 * es(P(lt, 1.4 + i * .3, .7)), z: 0, y: Math.sin(lt * 1.6 + i) * 8 }); }
+}
+function aSys(t, a) {
+  const lt = t - a; svcCommon('sys', t, a);
+  for (let i = 0; i < 4; i++) { const st = .3 + i * BEAT; const p = eio(P(lt, st, .55)); const snap = es(P(lt, st + .5, .5), 8, 16);
+    S(E('sy_p' + i), { o: eo(P(lt, st, .2)), z: -1600 * (1 - p), x: (i % 2 ? 600 : -600) * (1 - p), y: (i < 2 ? -500 : 500) * (1 - p), rx: 50 * (1 - p), ry: (i % 2 ? -60 : 60) * (1 - p), r: (i % 2 ? 20 : -20) * (1 - p), s: .96 + .04 * snap }); }
+  document.querySelectorAll('#sys .sy_bar').forEach((b, k) => b.style.width = (b.dataset.v * 100 * eo(P(lt, 2.0 + k * .1, .8))) + '%');
+  document.querySelectorAll('#sys .sy_dash').forEach(p => { p.style.strokeDasharray = 520; p.style.strokeDashoffset = 520 * (1 - eio(P(lt, 2.0, 1.2))); });
+  const hub = es(P(lt, 2.2, .8)); S(E('sy_hub'), { o: eo(P(lt, 2.2, .2)), s: Math.max(.01, hub), z: 200 });
+  E('sy_hub').querySelector('.rim').style.setProperty('--a', (lt * 160) + 'deg');
+  const svg = E('sy_lines'); const q = eo(P(lt, 2.3, .6));
+  svg.innerHTML = [[310, 820], [770, 820], [310, 1240], [770, 1240]].map(([x, y], i) =>
+    `<line x1="540" y1="1020" x2="${540 + (x - 540) * q}" y2="${1020 + (y - 1020) * q}" stroke="${['#FF7A1A', '#8C46FF', '#22D3EE', '#FF3D6E'][i]}" stroke-width="6" style="filter:drop-shadow(0 0 10px ${['#FF7A1A', '#8C46FF', '#22D3EE', '#FF3D6E'][i]})"/>`).join('');
+  S(E('sy_one'), { o: eo(P(lt, 2.9, .3)), s: .8 + .2 * es(P(lt, 2.9, .7)) });
+}
+function aBrand(t, a) {
+  const lt = t - a; svcCommon('brand', t, a);
+  E('br_c1').style.strokeDashoffset = 1700 * (1 - eio(P(lt, .3, 1.2))); E('br_g1').style.strokeDashoffset = 560 * (1 - eio(P(lt, .5, 1.0)));
+  S(E('br_c2'), { r: lt * 20 }); E('br_c2').style.transformOrigin = '300px 300px';
+  const lg = es(P(lt, 1.1, .9)); S(E('br_logo'), { o: eo(P(lt, 1.1, .2)), s: Math.max(.01, lg), r: (1 - lg) * 30 });
+  for (let i = 0; i < 5; i++) { const el = E('br_sw' + i); const p = es(P(lt, 1.6 + i * .12, .8), 6, 10);
+    const tx = 70 + i * 190, ty = 1080; el.style.left = '465px'; el.style.top = '800px';
+    S(el, { x: (tx - 465) * p, y: (ty - 800) * p, o: eo(P(lt, 1.6 + i * .12, .2)), r: (i - 2) * 6 * p, s: .5 + .5 * p, z: 100 }); }
+  S(E('br_type'), { o: eo(P(lt, 2.6, .3)), y: 160 + (1 - eo(P(lt, 2.6, .5))) * 60, rx: 10 * (1 - eo(P(lt, 2.6, .6))) });
+}
+function aAI(t, a) {
+  const lt = t - a; svcCommon('ai', t, a);
+  E('ai_orb').style.transform = `rotate(${lt * 120}deg) scale(${.4 + .6 * es(P(lt, .2, .9)) + .06 * Math.sin(lt * 6)})`; E('ai_orb').style.opacity = eo(P(lt, .2, .3));
+  S(E('ai_orb2'), { o: eo(P(lt, .3, .3)) * (.7 + .3 * Math.sin(lt * 5)), s: .8 + .2 * Math.sin(lt * 4) });
+  S(E('ai_card'), { o: eo(P(lt, .5, .35)), y: (1 - eo(P(lt, .5, .6))) * 120, rx: 12 * (1 - eo(P(lt, .5, .8))) });
+  E('ai_rim').style.setProperty('--a', (lt * 140) + 'deg'); E('ai_rim').style.opacity = eo(P(lt, 2.4, .4));
+  S(E('ai_m1'), { o: eo(P(lt, .9, .25)), s: .8 + .2 * es(P(lt, .9, .6)) });
+  const typing = lt > 1.4 && lt < 2.3; E('ai_typing').style.opacity = typing ? 1 : 0;
+  E('ai_typing').querySelectorAll('.dot').forEach((d, k) => d.style.transform = `translateY(${Math.sin(lt * 12 + k) * 8}px)`);
+  S(E('ai_m2'), { o: eo(P(lt, 2.3, .25)), s: .8 + .2 * es(P(lt, 2.3, .6)) });
+  S(E('ai_tag'), { o: eo(P(lt, 2.8, .3)) });
+  const pos = [[70, 1540], [430, 1540], [760, 1540]];
+  for (let i = 0; i < 3; i++) { const el = E('ai_c' + i); el.style.left = pos[i][0] + 'px'; el.style.top = (pos[i][1] - 80) + 'px';
+    S(el, { o: eo(P(lt, 3.0 + i * .2, .3)), s: .7 + .3 * es(P(lt, 3.0 + i * .2, .6)) }); }
+  S(E('ai_sub'), { o: 0 });
+}
+function aProof(t, a) {
+  const lt = t - a;
+  S(E('pr_h'), { o: eo(P(lt, .05, .2)), s: .8 + .2 * es(P(lt, .05, .6)) });
+  for (let i = 0; i < 5; i++) { const st = .45 + i * BEAT * 1.25, en = st + BEAT * 1.25; const p = es(P(lt, st, .4), 8, 14);
+    const on = lt >= st && (lt < en || i === 4);
+    S(E('pr_n' + i), { o: on ? eo(P(lt, st, .06)) : 0, s: 1.5 - .5 * p, blur: (1 - eo(P(lt, st, .12))) * 16 });
+    E('pr_n' + i).querySelector('.shim').style.backgroundPosition = `${t * 40}% 0`; }
+}
+function aCta(t, a) {
+  const lt = t - a;
+  const lg = es(P(lt, .1, 1.0)); S(E('ct_logo'), { o: eo(P(lt, .1, .2)), s: Math.max(.01, lg) * (1 + .03 * Math.sin(lt * 2.5)) });
+  S(E('ct_ring'), { o: eo(P(lt, .2, .4)) * .9, s: .6 + .4 * eo(P(lt, .2, .8)) });
+  for (let i = 0; i < 6; i++) { const ang = lt * .6 + i * Math.PI / 3 - Math.PI / 2; const p = es(P(lt, .4 + i * .08, .8));
+    const el = E('ct_i' + i); el.style.left = '485px'; el.style.top = '575px';
+    S(el, { x: Math.cos(ang) * 300 * p, y: Math.sin(ang) * 300 * p, o: eo(P(lt, .4 + i * .08, .2)), s: .6 + .4 * p }); }
+  S(E('ct_1'), { o: eo(P(lt, .5, .25)), y: (1 - eo(P(lt, .5, .5))) * 40 });
+  const c2 = E('ct_2'); S(c2, { o: eo(P(lt, 1.2, .2)), s: .6 + .4 * es(P(lt, 1.2, .8)) }); c2.style.backgroundPosition = `${t * 30}% 0`;
+  const pulse = 1 + .03 * Math.sin(Math.max(0, lt - 2.2) * 5);
+  S(E('ct_btn'), { o: eo(P(lt, 1.9, .3)), s: (.8 + .2 * es(P(lt, 1.9, .7))) * pulse });
+  S(E('ct_num'), { o: eo(P(lt, 2.4, .3)), y: (1 - eo(P(lt, 2.4, .5))) * 30 });
+  S(E('ct_web'), { o: eo(P(lt, 2.7, .3)) });
+}
+
+// ---------------- timeline ----------------
+const TL = [
+  ['hook', 0, T.logoEnd, aHook, 0],
+  ['social', T.svc(0), T.svc(1), aSocial], ['ads', T.svc(1), T.svc(2), aAds], ['web', T.svc(2), T.svc(3), aWeb],
+  ['sys', T.svc(3), T.svc(4), aSys], ['brand', T.svc(4), T.svc(5), aBrand], ['ai', T.svc(5), T.proof, aAI],
+  ['proof', T.proof, T.cta, aProof], ['cta', T.cta, T.end + 1, aCta]];
+window.CUTS = TL.slice(1).map(x => x[1]);
+window.HITS = [];   // exported for the audio side
+
+function globalFX(t) {
+  // edge glow: off in hook start, ignites at logo, full in AI + CTA
+  let edge = .25 + .75 * eo(P(t, 6.4, 1.1));
+  if (t > T.svc(5) && t < T.proof) edge = 1.25;
+  if (t > T.cta) edge = 1.2;
+  if (t < 3.75) edge = .18 * eo(P(t, 1, 2));
+  U.uEdge.value = edge;
+  U.uEnergy.value = t < 3.75 ? .35 : t < 7.5 ? .55 + .3 * eo(P(t, 3.75, 1)) : .85;
+  // warp on every cut
+  let warp = 0; for (const c of [3.75, ...window.CUTS]) { const d = t - c; if (d > -.3 && d < .35) warp = Math.max(warp, (d < 0 ? eo((d + .3) / .3) : 1 - eo(d / .35)) * .7); }
+  U.uWarp.value = warp;
+  // flash on cuts + hook tile slams
+  let fl = 0; for (const c of [3.75, 7.5, ...window.CUTS]) { const d = t - c; if (d >= 0 && d < .16) fl = Math.max(fl, (1 - d / .16) * .32); }
+  for (let i = 0; i < 6; i++) { const d = t - (BEAT * 2 + i * BEAT * .82); if (d >= 0 && d < .12) fl = Math.max(fl, (1 - d / .12) * .18); }
+  U.uFlash.value = fl * .35; document.getElementById('flash').style.opacity = fl;
+  U.uHue.value = t * .01; U.uT.value = t;
+  // beat punch + shake
+  let sc = 1, sx = 0, sy = 0;
+  if (t > 7.5 && t < T.end) { const bt = (t - 7.5) % BEAT; sc += .012 * Math.exp(-bt / .09); }
+  for (const c of [3.75, 7.5, ...window.CUTS]) { const d = t - c; if (d >= 0 && d < .4) { const k = Math.exp(-d / .1); sc += .06 * k; sx += (hash(Math.floor(t * 60)) - .5) * 30 * k; sy += (hash(Math.floor(t * 60) + 7) - .5) * 30 * k; } }
+  stage.style.transform = `translate(${sx}px,${sy}px) scale(${sc})`;
+}
+
+window.seek = (t) => {
+  globalFX(t);
+  for (const [id, a, b, fn] of TL) {
+    const el = scenes[id];
+    const on = t >= a - .02 && t < b + .02;
+    el.style.display = on ? 'block' : 'none';
+    if (on) { const e = sceneEnv(t, a, b, id === 'hook' ? .01 : .3, id === 'cta' ? .01 : .3); S(el, { o: e.o, s: e.s, blur: e.blur }); fn(t, a); }
+  }
+  renderer.render(scene, cam);
+  return true;
+};
+function fitHeads() { Object.values(scenes).forEach(sc => sc.style.display = 'block');
+  document.querySelectorAll('.fit').forEach(sp => { const box = sp.parentElement; let fs = parseFloat(getComputedStyle(box).fontSize);
+  while (sp.getBoundingClientRect().width > 940 && fs > 60) { fs -= 4; box.style.fontSize = fs + 'px'; } });
+  Object.values(scenes).forEach(sc => sc.style.display = 'none'); }
+window.ready = Promise.all(['500 50px Readex','600 50px Readex','700 50px Readex','500 50px SG','600 50px SG','700 50px SG','500 50px IT'].map(f => document.fonts.load(f, 'أبAa'))).then(() => document.fonts.ready).then(() => fitHeads()).then(() => Promise.all([...document.images].map(i => i.decode().catch(() => 0)))).then(() => true);
+</script>
+</body>
+</html>
