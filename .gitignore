@@ -1,0 +1,7 @@
+tools/__pycache__/
+tools/parts5/
+tools/posts/
+tools/*.wav
+tools/build5.log
+tools/vo5/*.wav
+tools/vo5/*.raw

@@ -201,5 +201,75 @@ def hf():
     T(c, "+212 701 177 915", CW / 2, 1070, "sg7", 64, "fg", track=0)
     finish(c, 5, total, name)
 
+def reelideas():
+    name, total = "reelideas", 7
+    slides = [
+        ("1", "وراء الكواليس", "كيفاش كتوجد الخدمة ديالك", "الناس كتيق فاللي كتشوفو", "hot"),
+        ("2", "سؤال كيتعاود", "جاوب عليه فـ 15 ثانية", "شنو أكثر حاجة كيسولوك عليها الكليان؟", "cool"),
+        ("3", "قبل و بعد", "النتيجة فلقطة وحدة", "بان الفرق فأول ثانيتين", "warm"),
+        ("4", "كليان كيهضر", "بكلامو، بلا سكريبت", "رأي صادق كيبيع أكثر من أي إعلان", "aurora"),
+        ("5", "نهارك فالخدمة", "من الصباح حتى تسد", "لقطات قصار، و قصة بسيطة", "hot"),
+    ]
+    c = base(41)
+    g = glow_dot(160, MAG, .6); place(c, g, CW / 2 - g.width / 2, 470 - g.height / 2, .6)
+    T(c, "ما عرفتيش", CW / 2, 280, "ar7", 124, "fg")
+    T(c, "شنو تصور؟", CW / 2, 440, "ar7", 124, "hot")
+    T(c, "5 أفكار ريلز بالتيليفون", CW / 2, 680, "ar6", 66, "fg")
+    T(c, "لأي بيزنس فالمغرب", CW / 2, 780, "ar6", 62, "aurora")
+    swipe(c); finish(c, 0, total, name)
+    for i, (n, h1, h2, ex, gk) in enumerate(slides):
+        c = base(42 + i)
+        num_badge(c, n, gk)
+        T(c, h1, CW - 90, 470, "ar7", 104, "fg", anchor="r")
+        T(c, h2, CW - 90, 630, "ar7", 64, gk, anchor="r")
+        bw = CW - 180
+        place(c, rrect_sprite(bw, 170, 34, (14, 12, 30, 225), (255, 255, 255, 40), 2), 90, 860)
+        T(c, ex, CW - 130, 912, "ar5", 40, (215, 212, 228), anchor="r")
+        if i < len(slides) - 1: swipe(c)
+        finish(c, i + 1, total, name)
+    c = base(49)
+    logo(c, CW / 2, 330, 230, 1., glow=.7)
+    T(c, "بغيتي نصورو", CW / 2, 520, "ar7", 104, "fg")
+    T(c, "ليك هادشي؟", CW / 2, 660, "ar7", 104, "aurora")
+    pw, ph = 760, 130
+    place(c, grad_pill("hot", pw, ph), CW / 2 - pw / 2, 880)
+    T(c, "كتب SPOT فالكومونتير", CW / 2, 906, "ar7", 54, (255, 255, 255))
+    T(c, "+212 701 177 915", CW / 2, 1070, "sg7", 64, "fg", track=0)
+    finish(c, 6, total, name)
+
+def wyoga():
+    name, total = "wyoga", 6
+    c = base(51)
+    g = glow_dot(180, PUR, .6); place(c, g, CW / 2 - g.width / 2, 470 - g.height / 2, .6)
+    T(c, "W Yoga Academy", CW / 2, 250, "sg6", 66, "muted", track=0)
+    T(c, "+11K €", CW / 2, 370, "sg7", 230, "hot", track=-6)
+    T(c, "بلا درهم واحد إعلانات", CW / 2, 720, "ar7", 80, "fg")
+    swipe(c); finish(c, 0, total, name)
+    slides = [("+11K €", "اشتراكات", "مداخيل من الاشتراكات", "hot"), ("5", "شهور", "هادشي كلو فخمسة ديال الشهور", "cool"),
+              ("0", "درهم إعلانات", "حتى درهم ما تصرف على الإعلانات", "warm")]
+    for i, (big, h, ex, gk) in enumerate(slides):
+        c = base(52 + i)
+        T(c, big, CW / 2, 260, "sg7", 230, gk, track=-6)
+        T(c, h, CW / 2, 590, "ar7", 104, "fg")
+        bw = CW - 180
+        place(c, rrect_sprite(bw, 170, 34, (14, 12, 30, 225), (255, 255, 255, 40), 2), 90, 800)
+        T(c, ex, CW / 2, 852, "ar5", 44, (215, 212, 228))
+        swipe(c); finish(c, 1 + i, total, name)
+    c = base(56)
+    T(c, "المشروع:", CW / 2, 260, "ar7", 110, "fg")
+    T(c, "بلاتفورم وحدة", CW / 2, 450, "ar7", 110, "aurora")
+    T(c, "All-in-one", CW / 2, 640, "sg7", 110, "hot", track=-3)
+    T(c, "منصة يوغا فبلاصة وحدة", CW / 2, 830, "ar6", 58, "fg")
+    swipe(c); finish(c, 4, total, name)
+    c = base(57)
+    logo(c, CW / 2, 330, 230, 1., glow=.7)
+    T(c, "بغيتي منصة", CW / 2, 520, "ar7", 104, "fg")
+    T(c, "ديالك؟", CW / 2, 660, "ar7", 104, "aurora")
+    pw, ph = 760, 130
+    place(c, grad_pill("hot", pw, ph), CW / 2 - pw / 2, 880)
+    T(c, "كتب SPOT فالكومونتير", CW / 2, 906, "ar7", 54, (255, 255, 255))
+    T(c, "+212 701 177 915", CW / 2, 1070, "sg7", 64, "fg", track=0)
+    finish(c, 5, total, name)
+
 if __name__ == "__main__":
-    {"bio": bio, "packs": packs, "hooks": hooks, "hf": hf}[sys.argv[1]]()
+    {"bio": bio, "packs": packs, "hooks": hooks, "hf": hf, "reelideas": reelideas, "wyoga": wyoga}[sys.argv[1]]()
