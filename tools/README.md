@@ -2,6 +2,8 @@
 
 Everything needed to produce on-brand posts for @spotlightadzagency.
 
+**Start with `STYLE.md`.** New work is built in `remotion/` (React + Remotion): `src/brand.tsx` is the motion system, `src/reels/` and `src/carousels/` hold the pieces, `stills.mjs` renders key frames and carousel slides. The PIL renderers below are legacy.
+
 - `carousel.py` — 4:5 Instagram carousels (1080x1350) in the brand kit. Add a function per carousel, run `python3 carousel.py <name>`; output in `posts/`.
 - `render.py`, `render2.py` — 9:16 motion reels (dark brand world, VFX, Darija text). `render2.py` holds the shared helpers (Arabic text `T`, `logo`, icons, `grade`).
 - `render3.py` — Lovable-style launch (light UI) and keynote-style reveal reels.
