@@ -5,3 +5,6 @@ tools/*.wav
 tools/build5.log
 tools/vo5/*.wav
 tools/vo5/*.raw
+tools/vo6/*.raw
+tools/vo6/*.wav
+tools/vo6/*.mp3
