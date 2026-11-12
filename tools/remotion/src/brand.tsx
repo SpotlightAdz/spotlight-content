@@ -187,3 +187,116 @@ export const WaButton: React.FC<{ p: number; label: string; y: number }> = ({ p,
     <div style={{ fontFamily: "Inter Tight", fontWeight: 500, fontSize: 38, color: C.muted, letterSpacing: 1 }}>spotlightadz.ma</div>
   </div>
 );
+
+// =====================================================================
+// v2 kit (Nov 2026): reel shell, headers, counters, icons, chat, CTA.
+// =====================================================================
+import { Audio, Sequence } from "remotion";
+
+export type ReelData = { total: number; cuts: number[]; beats?: number[]; lines: Word[][] };
+export const sec = (s: number) => Math.round(s * 30);
+
+// Whole-reel shell: stage, VO mix, whip cuts between scenes, flash, synced captions, chrome.
+// scenes[i] plays from edge i to edge i+1 (edges = [0, ...cuts, total]).
+export const ReelShell: React.FC<{ data: ReelData; audio: string; scenes: React.FC[]; capHide?: (t: number, scene: number) => boolean; index?: (scene: number) => string | undefined; capY?: number }> =
+  ({ data, audio, scenes, capHide, index, capY = 1420 }) => {
+    useFonts();
+    const f = useCurrentFrame();
+    const edges = [0, ...data.cuts, data.total];
+    const sceneAt = (t: number) => Math.max(0, edges.findIndex((e, i) => t >= e && t < edges[i + 1]));
+    const cur = sceneAt(f / 30);
+    return (
+      <Stage hue={cur * 0.7}>
+        <Audio src={staticFile(audio)} />
+        <Whip cuts={data.cuts}>
+          {scenes.map((Sc, i) => (
+            <Sequence key={i} from={sec(edges[i])} durationInFrames={sec(edges[i + 1] - edges[i]) + 1}><Sc /></Sequence>
+          ))}
+        </Whip>
+        <Flash cuts={data.cuts} />
+        <Captions lines={data.lines} y={capY} hide={(t) => (capHide ? capHide(t, sceneAt(t)) : false)} />
+        <Chrome total={data.total} index={index ? index(cur) : undefined} />
+      </Stage>
+    );
+  };
+
+// Kicker chip + kinetic headline used at the top of explainer scenes.
+export const SceneHead: React.FC<{ kicker: React.ReactNode; words: string[]; hi?: number[]; size?: number; y?: number }> = ({ kicker, words, hi = [], size = 108, y = 230 }) => {
+  const f = useCurrentFrame();
+  return (
+    <>
+      <div style={{ position: "absolute", top: y, left: 0, right: 0, display: "flex", justifyContent: "center" }}><Tag p={at(f, 0, 12)}>{kicker}</Tag></div>
+      <Kinetic words={words} start={3} step={4} y={y + 90} size={size} hiIdx={hi} />
+    </>
+  );
+};
+export const Num: React.FC<{ n: string; label: string }> = ({ n, label }) => (
+  <><span style={{ fontFamily: SG, fontWeight: 700 }}>{n}</span><span style={{ width: 2, height: 30, background: C.line }} />{label}</>
+);
+
+// Count-up number (Space Grotesk, gradient, glow). fmt receives the eased value.
+export const Counter: React.FC<{ to: number; from?: number; start?: number; dur?: number; fmt?: (v: number) => string; size?: number; y: number; g?: string }> =
+  ({ to, from = 0, start = 0, dur = 50, fmt = (v) => Math.round(v).toString(), size = 300, y, g = HOT }) => {
+    const f = useCurrentFrame();
+    const v = interpolate(f, [start, start + dur], [from, to], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: (x) => 1 - Math.pow(1 - x, 4) });
+    return (
+      <div dir="ltr" style={{ position: "absolute", top: y, left: 0, right: 0, textAlign: "center", fontFamily: SG, fontWeight: 700, fontSize: size, letterSpacing: -size * 0.04, lineHeight: 1,
+        filter: "drop-shadow(0 30px 80px rgba(255,45,122,.5))", fontVariantNumeric: "tabular-nums" }}><Grad g={g}>{fmt(v)}</Grad></div>
+    );
+  };
+
+// Line icons (24px grid, stroke). Add new paths here, not inline in reels.
+export const ICON: Record<string, string[]> = {
+  heart: ["M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"],
+  chat: ["M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.5A8.4 8.4 0 1 1 21 11.5z"],
+  send: ["M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"],
+  save: ["M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"],
+  camera: ["M3 8h3l2-3h8l2 3h3v12H3z", "M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+  sun: ["M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"],
+  list: ["M9 6h12M9 12h12M9 18h12", "M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"],
+  cut: ["M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"],
+  mic: ["M12 15a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v7a3 3 0 0 0 3 3z", "M19 11a7 7 0 0 1-14 0M12 18v4"],
+  type: ["M4 7V4h16v3M9 20h6M12 4v16"],
+  pin: ["M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z", "M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"],
+  tag: ["M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z", "M7.5 7.5h.01"],
+  bolt: ["M13 2 3 14h9l-1 8 10-12h-9z"],
+  users: ["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"],
+  grid: ["M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"],
+  sparkle: ["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", "M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"],
+  check: ["M5 12.5l4.5 4.5L19 7.5"],
+  globe: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"],
+};
+export const LineIcon: React.FC<{ name: string; size?: number; color?: string; sw?: number; fill?: string }> = ({ name, size = 44, color = "#fff", sw = 2, fill = "none" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{ICON[name].map((d, i) => <path key={i} d={d} />)}</svg>
+);
+
+// Chat bubble that pops in at frame `at0` (local). side "in" = customer (left, grey), "out" = business (right, green).
+export const Bubble: React.FC<{ at0: number; side?: "in" | "out"; children: React.ReactNode; time?: string; size?: number; maxW?: number }> =
+  ({ at0, side = "in", children, time, size = 26, maxW = 340 }) => {
+    const p = useSpring(at0, 12);
+    const out = side === "out";
+    return (
+      <div dir="rtl" style={{ alignSelf: out ? "flex-end" : "flex-start", maxWidth: maxW, padding: "14px 20px", borderRadius: out ? "22px 22px 6px 22px" : "22px 22px 22px 6px",
+        background: out ? "#1f6f4a" : "#26252e", color: "#fff", fontFamily: AR, fontWeight: 500, fontSize: size, lineHeight: 1.4,
+        opacity: Math.min(1, p * 1.4), transform: `scale(${0.75 + 0.25 * p})`, transformOrigin: out ? "right bottom" : "left bottom" }}>
+        {children}
+        {time && <div dir="ltr" style={{ fontFamily: SG, fontSize: 15, color: "rgba(255,255,255,.55)", marginTop: 4, textAlign: out ? "right" : "left" }}>{time}</div>}
+      </div>
+    );
+  };
+
+// Comment-keyword CTA: "كتب KEYWORD فالكومونتير" pill + WhatsApp line.
+export const CommentCta: React.FC<{ p: number; keyword: string; y: number; wa?: boolean }> = ({ p, keyword, y, wa = true }) => (
+  <div style={{ position: "absolute", top: y, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 28, opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}>
+    <div dir="rtl" style={{ display: "flex", alignItems: "center", gap: 18, padding: "28px 60px", borderRadius: 999, background: AURORA, boxShadow: "0 30px 80px rgba(255,45,122,.45)", fontFamily: AR, fontWeight: 700, fontSize: 54, color: "#fff" }}>
+      <LineIcon name="chat" size={52} sw={2.2} />كتب <span style={{ fontFamily: SG, letterSpacing: 2 }}>{keyword}</span> فالكومونتير
+    </div>
+    {wa && <div dir="ltr" style={{ fontFamily: SG, fontWeight: 700, fontSize: 50, color: C.ink, letterSpacing: 1 }}>+212 701 177 915</div>}
+    <div style={{ fontFamily: "Inter Tight", fontWeight: 500, fontSize: 36, color: C.muted, letterSpacing: 1 }}>spotlightadz.ma</div>
+  </div>
+);
+
+// Small "مثال توضيحي" label for illustrative UI data.
+export const Illustrative: React.FC<{ x?: number; y: number; o?: number }> = ({ x, y, o = 1 }) => (
+  <div dir="rtl" style={{ position: "absolute", top: y, ...(x !== undefined ? { left: x } : { left: 0, right: 0, textAlign: "center" as const }), fontFamily: AR, fontWeight: 500, fontSize: 24, color: C.muted, opacity: o * 0.85 }}>مثال توضيحي</div>
+);

@@ -7,6 +7,12 @@ The bar: every post should look like it came from a top agency's own account, no
 - **Reels and carousels are built in `tools/remotion/`** (React + Remotion, rendered in Chromium). Real web typography, proper Arabic shaping, springs, masks, blur, depth, grain. The old PIL renderers (`render*.py`, `carousel.py`) are legacy: use them only as a fallback.
 - Shared look lives in `tools/remotion/src/brand.tsx`: `Stage` (soft black, moving aurora light, grain, vignette), `Chrome` (progress bar, brand chip, scene index), `Kinetic` (masked word-by-word type), `Captions` (voice-synced, active word lit), `Whip` + `Flash` (cut transitions), `Phone`, `Glass`, `Tag`, `WaButton`.
 - Reference pieces: `src/reels/RestaurantMistakes.tsx` (dark editorial explainer) and `src/carousels/ReelIdeas.tsx` (editorial carousel, dark cover + paper inner slides).
+- **v2 kit (Nov 2026, in `brand.tsx`)** — use these instead of re-writing scaffolding:
+  - `ReelShell` — a whole reel from `{data, audio, scenes[]}`: stage, VO mix, whip cuts on `data.cuts`, flash, synced captions (`capHide(t, scene)`), chrome with optional per-scene index. A new reel is now just its scene components (see `src/reels/BrandMistakes.tsx`, `HappyFitnessSystem.tsx`, `ShootDay.tsx`, `PovBchhal.tsx`, `FollowersMyth.tsx`).
+  - `SceneHead` + `Num` (kicker chip "01 الغلطة" + kinetic headline), `Counter` (count-up gradient number; wrap it in a positioned div to move it off-center), `LineIcon` + `ICON` (one icon set for reels and carousels: add new paths there), `Bubble` (chat bubble, in/out), `CommentCta` (comment-keyword pill + WhatsApp), `Illustrative` ("مثال توضيحي" label), `sec()`.
+  - `ShootDay.tsx` has a `Viewfinder` overlay (REC, timecode, thirds) for BTS pieces; `PovBchhal.tsx` has a message-flood hook.
+  - Carousels: `src/carousels/editorial.tsx` (`Dark`, `PaperStep`, `Header`, `Footer`, `CtaPill`, `nbsp()`), see `W3Carousels.tsx` (steps carousel, quiz → pricing carousel).
+- **Voice pipeline** (`tools/vo6/`): `extract.py` pulls the WAV out of a saved Speko result; tighten pauses with ffmpeg `silenceremove` (stop_duration 0.32); `align.py <id>` aligns our script spelling (`scripts.json`) to the Speko transcript timings (`trans/<id>.json`) and writes `src/reels/<id>.json` (cuts on beat starts, caption lines ≤ 4 words / 24 chars). `tools/mix6.py <id> <dark|light|keynote|pov>` builds the original music bed + SFX, ducks under the voice, prints voice-over-music dB and normalises to -14 LUFS.
 
 ## Reel recipe
 
@@ -32,6 +38,7 @@ The bar: every post should look like it came from a top agency's own account, no
 
 - Safe zone for reels: x 80–1000, y 220–1480. Instagram UI covers the bottom ~420 px and the top ~200 px.
 - Margins 70–90 px. Align to a center axis or a hard right edge (RTL), never both in one scene.
+- Keep a lone "و" glued to the next word (`nbsp()` or a non-breaking space) so it never ends a line. Don't use «» around Arabic words in RTL blocks: they mirror and read backwards.
 - Max 2 type sizes per scene plus captions. Readex Pro for Arabic, Space Grotesk for numbers and Latin.
 - Brand colors only: #06050C, aurora #FFB800 → #FF3D2E → #FF2D7A → #7B3CF2 → #22D3EE, ink #FBF8F5, WhatsApp green only for chat/CTA.
 
