@@ -9,6 +9,9 @@ Everything needed to produce on-brand posts for @spotlightadzagency.
 - `render3.py` — Lovable-style launch (light UI) and keynote-style reveal reels.
 - `render5.py`, `audio5.py`, `build5.sh` — voice-timed reels: VO first (`vo5/times.json` holds scene cuts), hook on screen from frame 0, no fade-in. `build5.sh R B E C Z` renders and muxes.
 - `audiolib.py`, `audio3.py` — music bed, SFX and voiceover mixing (voice 10+ dB above music, -14 LUFS).
+- `mix7.py` — soundtrack v7 (original Moroccan/afro/keynote/dark beds, CC0 Kenney SFX in `sfx/kenney`, riser on the CTA cut, pedalboard mastering, exact -14 LUFS). `mix6.py` is the older version.
+- `contrast.py` — WCAG contrast check for brand color pairs.
+- `skills/color-expert` — vendored color-science skill (CC BY 4.0, meodai). Remotion's official skills are cloned at run time (see STYLE.md).
 - `fonts/` — Space Grotesk, Inter Tight, Readex Pro (Arabic+Latin merged). `assets/logo.webp` — brand logo.
 
 Brand: background #04030C, aurora gradient #FFB800 → #FF3D2E → #FF2D7A → #7B3CF2 → #22D3EE, text #FBF8F5.

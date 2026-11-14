@@ -7,7 +7,7 @@ import {
 
 export const C = {
   bg: "#06050C", ink: "#FBF8F5", muted: "#9C9CB1", line: "rgba(255,255,255,.12)",
-  yel: "#FFB800", ora: "#FF7A1A", red: "#FF3D2E", pink: "#FF2D7A", pur: "#7B3CF2", cya: "#22D3EE", green: "#25D366",
+  yel: "#FFB800", ora: "#FF7A1A", red: "#FF3D2E", pink: "#FF2D7A", pur: "#7B3CF2", cya: "#22D3EE", green: "#25D366", waDeep: "#0E7A43",
 };
 export const AURORA = `linear-gradient(100deg, ${C.yel} 0%, ${C.red} 30%, ${C.pink} 55%, ${C.pur} 80%, ${C.cya} 100%)`;
 export const HOT = `linear-gradient(100deg, ${C.yel}, ${C.red} 45%, ${C.pink})`;
@@ -23,12 +23,13 @@ const FONTS: [string, string, number][] = [
 let fontsLoaded = false;
 export const useFonts = () => {
   const [h] = React.useState(() => (fontsLoaded ? null : delayRender("fonts")));
+  const [, setReady] = React.useState(fontsLoaded);
   React.useEffect(() => {
     if (h === null) return;
     Promise.all(FONTS.map(([fam, src, w]) => {
       const f = new FontFace(fam, `url(${staticFile(src)})`, { weight: String(w) });
       return f.load().then((ff) => document.fonts.add(ff));
-    })).then(() => { fontsLoaded = true; continueRender(h); });
+    })).then(() => { fontsLoaded = true; setReady(true); requestAnimationFrame(() => continueRender(h)); }); // re-render so fitText measures the real font
   }, [h]);
 };
 
@@ -198,8 +199,9 @@ export const sec = (s: number) => Math.round(s * 30);
 
 // Whole-reel shell: stage, VO mix, whip cuts between scenes, flash, synced captions, chrome.
 // scenes[i] plays from edge i to edge i+1 (edges = [0, ...cuts, total]).
-export const ReelShell: React.FC<{ data: ReelData; audio: string; scenes: React.FC[]; capHide?: (t: number, scene: number) => boolean; index?: (scene: number) => string | undefined; capY?: number }> =
-  ({ data, audio, scenes, capHide, index, capY = 1420 }) => {
+export const ReelShell: React.FC<{ data: ReelData; audio: string; scenes: React.FC[]; capHide?: (t: number, scene: number) => boolean; index?: (scene: number) => string | undefined; capY?: number;
+  leaks?: boolean; loop?: boolean }> =
+  ({ data, audio, scenes, capHide, index, capY = 1420, leaks = true, loop = true }) => {
     useFonts();
     const f = useCurrentFrame();
     const edges = [0, ...data.cuts, data.total];
@@ -214,6 +216,8 @@ export const ReelShell: React.FC<{ data: ReelData; audio: string; scenes: React.
           ))}
         </Whip>
         <Flash cuts={data.cuts} />
+        {leaks && <LeakCuts cuts={data.cuts} />}
+        {loop && <LoopBack total={data.total} Hook={scenes[0]} />}
         <Captions lines={data.lines} y={capY} hide={(t) => (capHide ? capHide(t, sceneAt(t)) : false)} />
         <Chrome total={data.total} index={index ? index(cur) : undefined} />
       </Stage>
@@ -299,4 +303,66 @@ export const CommentCta: React.FC<{ p: number; keyword: string; y: number; wa?: 
 // Small "مثال توضيحي" label for illustrative UI data.
 export const Illustrative: React.FC<{ x?: number; y: number; o?: number }> = ({ x, y, o = 1 }) => (
   <div dir="rtl" style={{ position: "absolute", top: y, ...(x !== undefined ? { left: x } : { left: 0, right: 0, textAlign: "center" as const }), fontFamily: AR, fontWeight: 500, fontSize: 24, color: C.muted, opacity: o * 0.85 }}>مثال توضيحي</div>
+);
+
+// =====================================================================
+// v3 kit (Nov 2026): light leaks, loop-back ending, fitted headlines, send CTA.
+// Needs WebGL2 → renders use --gl=angle-egl (set in remotion.config.ts and stills.mjs).
+// =====================================================================
+import { Solid } from "remotion";
+import { lightLeak } from "@remotion/effects/light-leak";
+import { fitText } from "@remotion/layout-utils";
+
+// Warm film light leak that blooms over each cut (0.8 s, peaks on the cut). Hue 0 = amber, 60 = brand pink.
+export const LeakCuts: React.FC<{ cuts: number[]; strength?: number }> = ({ cuts, strength = 0.32 }) => {
+  const f = useCurrentFrame(); const t = f / 30; const { width, height } = useVideoConfig();
+  const i = cuts.findIndex((c) => Math.abs(t - c) < 0.3);
+  if (i < 0) return null;
+  const p = interpolate(t, [cuts[i] - 0.3, cuts[i] + 0.3], [0.1, 0.75], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill style={{ mixBlendMode: "screen", opacity: strength, pointerEvents: "none" }}>
+      <Solid width={width} height={height} color="#000000" effects={[lightLeak({ seed: i * 7 + 3, hueShift: i % 2 ? 60 : 0, progress: p })]} />
+    </AbsoluteFill>
+  );
+};
+
+// Seamless loop: the last 0.45 s cross-fades into the hook's first frame, so the replay feels continuous
+// (rewatches add watch time, the #1 ranking signal).
+export const LoopBack: React.FC<{ total: number; Hook: React.FC; dur?: number }> = ({ total, Hook, dur = 0.45 }) => {
+  const f = useCurrentFrame(); const t = f / 30;
+  if (t < total - dur) return null;
+  const o = interpolate(t, [total - dur, total - 1 / 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: inOut });
+  return (
+    <AbsoluteFill style={{ opacity: o }}>
+      <Stage><FrozenAt0><Hook /></FrozenAt0></Stage>
+    </AbsoluteFill>
+  );
+};
+// Renders children as they look at local frame 0.
+const FrozenAt0: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const f = useCurrentFrame();
+  return <Sequence from={f} layout="none">{children}</Sequence>;
+};
+
+// One headline line auto-sized to fit a width (no more surprise wraps). Arabic: word-level, dir rtl.
+export const FitLine: React.FC<{ text: string; y: number; max?: number; width?: number; weight?: number; family?: string; color?: string; grad?: string; p?: number }> =
+  ({ text, y, max = 140, width = 920, weight = 700, family = "Readex", color = C.ink, grad, p = 1 }) => {
+    const { fontSize } = fitText({ text, withinWidth: width, fontFamily: family, fontWeight: weight });
+    const size = Math.min(max, fontSize * 0.97);
+    return (
+      <div dir="rtl" lang="ar" style={{ position: "absolute", top: y, left: 0, right: 0, textAlign: "center", fontFamily: family, fontWeight: weight, fontSize: size, lineHeight: 1.2, color,
+        opacity: p, transform: `translateY(${(1 - p) * 40}px)`, whiteSpace: "nowrap" }}>
+        {grad ? <Grad g={grad}>{text}</Grad> : text}
+      </div>
+    );
+  };
+
+// "Send this to…" CTA. Sends are the strongest signal for reaching NON-followers, so most reels end on a send ask.
+export const SendCta: React.FC<{ p: number; to: string; y: number; wa?: boolean }> = ({ p, to, y, wa = true }) => (
+  <div style={{ position: "absolute", top: y, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 26, opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}>
+    <div dir="rtl" style={{ display: "flex", alignItems: "center", gap: 18, padding: "28px 56px", borderRadius: 999, background: AURORA, boxShadow: "0 30px 80px rgba(255,45,122,.45)", fontFamily: AR, fontWeight: 700, fontSize: 52, color: "#fff" }}>
+      <LineIcon name="send" size={50} sw={2.2} />صيفطها {to}
+    </div>
+    {wa && <div dir="ltr" style={{ fontFamily: SG, fontWeight: 700, fontSize: 46, color: C.ink, letterSpacing: 1 }}>+212 701 177 915</div>}
+  </div>
 );
