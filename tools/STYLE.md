@@ -80,7 +80,7 @@ Render key frames with `node stills.mjs <Comp> <dir> <frames>` (first frame, mid
 - Every scene has one obvious focal point; nothing important sits below y 1480.
 - It looks finished next to a top agency's feed. If not, redesign the scene, don't polish it.
 
-Then render: `npx remotion render src/index.ts <Comp> out/<file>.mp4 --concurrency=2 --crf=20 --audio-codec=aac` (≈20–40 min per 30 s reel on this machine; render reels in the background and work on carousels meanwhile). Carousels: `SCALE=1 FMT=jpeg node stills.mjs <Comp> <dir> 0,1,...`.
+Then render: `npx remotion render src/index.ts <Comp> out/<file>.mp4 --concurrency=2 --crf=20 --audio-codec=aac --timeout=120000` (the long timeout lets WebGL light-leak shaders compile on the first leak frame) (≈20–40 min per 30 s reel on this machine; render reels in the background and work on carousels meanwhile). Carousels: `SCALE=1 FMT=jpeg node stills.mjs <Comp> <dir> 0,1,...`.
 
 ## Formats that work for an agency account
 
