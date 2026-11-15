@@ -14,6 +14,7 @@ import { FollowersMyth } from "./reels/FollowersMyth";
 import R5 from "./reels/R5.json";
 import { CaptionFormula, CAPTION_SLIDES, PackQuiz, PACK_SLIDES } from "./carousels/W3Carousels";
 import { FxTest } from "./lab/FxTest";
+import { Look3D } from "./three/Look3D";
 import { ReelIdeas, REEL_IDEAS_SLIDES } from "./carousels/ReelIdeas";
 
 export const Root: React.FC = () => (
@@ -28,5 +29,6 @@ export const Root: React.FC = () => (
     <Composition id="CaptionFormula" component={CaptionFormula} durationInFrames={CAPTION_SLIDES} fps={30} width={1080} height={1350} />
     <Composition id="PackQuiz" component={PackQuiz} durationInFrames={PACK_SLIDES} fps={30} width={1080} height={1350} />
     <Composition id="FxTest" component={FxTest} durationInFrames={31} fps={30} width={1080} height={1920} />
+    <Composition id="Look3D" component={Look3D} durationInFrames={90} fps={30} width={1080} height={1920} defaultProps={{ theme: "sunlit" }} />
   </>
 );
