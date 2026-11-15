@@ -35,7 +35,7 @@ export const Look3D: React.FC<{ theme: string }> = ({ theme }) => {
   return (
     <AbsoluteFill style={{ background: T.bg }}>
       <div style={{ position: "absolute", inset: 0, background: `radial-gradient(40% 25% at 50% 52%, ${T.glow}, transparent 70%)` }} />
-      {font3d && <Stage3D camZ={17 - t * 0.2} fov={30}>
+      {font3d && <Stage3D camZ={17 - t * 0.2} fov={30} shadows>
         <Floor y={-4.2} opacity={T.dark ? 0.35 : 0.18} />
         <Text3D text="10K" size={1.55} depth={0.55} material={heroMat} position={[0, 1.05, 0]} rotation={[0.08, -0.35 + Math.sin(t * 0.8) * 0.12, 0]} />
         <Phone3D screen={screen} position={[1.15, -2.6, 0.4]} rotation={[-0.18, -0.5 + t * 0.03, 0.1]} scale={0.6} body={T.dark ? "#16151d" : "#2b2933"} />

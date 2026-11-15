@@ -1,12 +1,14 @@
 // Spotlight Adz motion system: shared look for every reel.
 // Rules live in tools/STYLE.md. Keep scenes inside the safe zone: x 80..1000, y 220..1480.
 import React from "react";
+import { Backdrop3D } from "./three/kit3d";
 import {
   AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig, Easing, continueRender, delayRender,
 } from "remotion";
 
 export const C = {
-  bg: "#06050C", ink: "#FBF8F5", muted: "#9C9CB1", line: "rgba(255,255,255,.12)",
+  // Sunlit Studio theme (chosen by the owner, 15 Nov 2026): warm cream studio, deep plum ink, aurora accents.
+  bg: "#F6EADF", ink: "#1A1222", muted: "#6D5F6E", line: "rgba(26,18,34,.12)", night: "#06050C", paper: "#F3EEE7", cream: "#FFF8F0",
   yel: "#FFB800", ora: "#FF7A1A", red: "#FF3D2E", pink: "#FF2D7A", pur: "#7B3CF2", cya: "#22D3EE", green: "#25D366", waDeep: "#0E7A43",
 };
 export const AURORA = `linear-gradient(100deg, ${C.yel} 0%, ${C.red} 30%, ${C.pink} 55%, ${C.pur} 80%, ${C.cya} 100%)`;
@@ -43,17 +45,18 @@ export const useSpring = (delay = 0, damping = 14, mass = 0.8) => {
 };
 
 // ---------- background: soft black, moving aurora light, grain, vignette ----------
-export const Stage: React.FC<{ hue?: number; children?: React.ReactNode }> = ({ hue = 0, children }) => {
+export const Stage: React.FC<{ hue?: number; children?: React.ReactNode; three?: boolean }> = ({ hue = 0, children, three = true }) => {
   const f = useCurrentFrame();
   const t = f / 30;
   const b1x = 30 + Math.sin(t * 0.35 + hue) * 12, b1y = 18 + Math.cos(t * 0.27) * 6;
   const b2x = 72 + Math.cos(t * 0.3 + hue) * 10, b2y = 78 + Math.sin(t * 0.22) * 6;
   return (
-    <AbsoluteFill style={{ background: C.bg, overflow: "hidden" }}>
-      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(40% 28% at ${b1x}% ${b1y}%, rgba(255,61,46,.42), transparent 70%), radial-gradient(45% 30% at ${b2x}% ${b2y}%, rgba(123,60,242,.45), transparent 70%), radial-gradient(30% 20% at 85% 30%, rgba(255,45,122,.22), transparent 70%)` }} />
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 80% at 50% 45%, transparent 55%, rgba(0,0,0,.75) 100%)" }} />
+    <AbsoluteFill style={{ background: "radial-gradient(80% 60% at 50% 35%, #FFF8F0 0%, #F6EADF 55%, #EBD9C9 100%)", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(40% 26% at ${b1x}% ${b1y}%, rgba(255,184,0,.20), transparent 70%), radial-gradient(45% 30% at ${b2x}% ${b2y}%, rgba(255,45,122,.16), transparent 70%), radial-gradient(30% 20% at 85% 30%, rgba(123,60,242,.10), transparent 70%)` }} />
+      {three && <Backdrop3D />}
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 85% at 50% 45%, transparent 60%, rgba(120,72,50,.18) 100%)" }} />
       {children}
-      <Grain />
+      <Grain o={0.04} />
     </AbsoluteFill>
   );
 };
@@ -121,8 +124,8 @@ export const Captions: React.FC<{ lines: Word[][]; y?: number; hide?: (t: number
         const said = t >= w.s;
         return (
           <span key={i} style={{ fontFamily: AR, fontWeight: 700, fontSize: 62, lineHeight: 1.3, padding: "2px 18px 10px", borderRadius: 18,
-            color: said ? C.ink : "rgba(251,248,245,.38)", background: active ? AURORA : "transparent",
-            boxShadow: active ? "0 10px 40px rgba(255,45,122,.35)" : "none", textShadow: active ? "none" : "0 4px 24px rgba(0,0,0,.6)" }}>{w.t}</span>
+            color: active ? "#fff" : said ? C.ink : "rgba(26,18,34,.32)", background: active ? AURORA : "transparent",
+            boxShadow: active ? "0 10px 30px rgba(255,45,122,.30)" : "none", textShadow: active ? "0 1px 2px rgba(0,0,0,.18)" : "0 2px 18px rgba(255,248,240,.9)" }}>{w.t}</span>
         );
       })}
     </div>
@@ -149,12 +152,12 @@ export const Flash: React.FC<{ cuts: number[] }> = ({ cuts }) => {
   const f = useCurrentFrame(); const t = f / 30;
   let o = 0;
   for (const c of cuts) { const d = Math.abs(t - c); if (d < 0.18) o = Math.max(o, 1 - d / 0.18); }
-  return <AbsoluteFill style={{ background: "radial-gradient(60% 40% at 50% 45%, rgba(255,184,0,.55), rgba(255,45,122,.25) 50%, transparent 80%)", opacity: o * 0.8, mixBlendMode: "screen" }} />;
+  return <AbsoluteFill style={{ background: "radial-gradient(60% 40% at 50% 45%, rgba(255,250,240,.95), rgba(255,214,170,.35) 50%, transparent 80%)", opacity: o * 0.7 }} />;
 };
 
 // ---------- UI pieces ----------
 export const Tag: React.FC<{ children: React.ReactNode; p?: number; style?: React.CSSProperties }> = ({ children, p = 1, style }) => (
-  <div dir="rtl" style={{ display: "inline-flex", alignItems: "center", gap: 14, padding: "12px 28px", borderRadius: 999, border: `2px solid ${C.line}`, background: "rgba(255,255,255,.05)",
+  <div dir="rtl" style={{ display: "inline-flex", alignItems: "center", gap: 14, padding: "12px 28px", borderRadius: 999, border: `2px solid rgba(255,255,255,.9)`, background: "rgba(255,255,255,.62)", boxShadow: "0 10px 30px rgba(90,50,40,.10)",
     fontFamily: AR, fontWeight: 600, fontSize: 36, color: C.ink, opacity: p, transform: `translateY(${(1 - p) * 20}px)`, ...style }}>{children}</div>
 );
 
@@ -162,7 +165,7 @@ export const Phone: React.FC<{ x: number; y: number; w?: number; p?: number; til
   const h = w * 2.05;
   return (
     <div style={{ position: "absolute", left: x - w / 2, top: y, width: w, height: h, borderRadius: w * 0.13, padding: 14, background: "linear-gradient(160deg,#2a2833,#0d0c12)",
-      boxShadow: "0 60px 120px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,255,255,.12)", opacity: p,
+      boxShadow: "0 50px 100px rgba(80,40,30,.30), 0 12px 24px rgba(80,40,30,.18), inset 0 0 0 2px rgba(255,255,255,.12)", opacity: p,
       transform: `perspective(1600px) translateY(${(1 - p) * 140}px) rotateX(${(1 - p) * 18}deg) rotateY(${tilt}deg) scale(${0.9 + 0.1 * p})` }}>
       <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: w * 0.11, overflow: "hidden", background: "#0b0b10" }}>
         {children}
@@ -173,8 +176,8 @@ export const Phone: React.FC<{ x: number; y: number; w?: number; p?: number; til
 };
 
 export const Glass: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }> = ({ style, children }) => (
-  <div style={{ borderRadius: 36, background: "linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.03))", border: `1.5px solid ${C.line}`,
-    boxShadow: "0 40px 80px rgba(0,0,0,.45)", ...style }}>{children}</div>
+  <div style={{ borderRadius: 36, background: "linear-gradient(160deg, rgba(255,255,255,.88), rgba(255,255,255,.62))", border: "1.5px solid rgba(255,255,255,.95)",
+    boxShadow: "0 30px 70px rgba(90,50,40,.16), 0 6px 16px rgba(90,50,40,.08)", ...style }}>{children}</div>
 );
 
 export const WaButton: React.FC<{ p: number; label: string; y: number }> = ({ p, label, y }) => (
@@ -270,7 +273,7 @@ export const ICON: Record<string, string[]> = {
   check: ["M5 12.5l4.5 4.5L19 7.5"],
   globe: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"],
 };
-export const LineIcon: React.FC<{ name: string; size?: number; color?: string; sw?: number; fill?: string }> = ({ name, size = 44, color = "#fff", sw = 2, fill = "none" }) => (
+export const LineIcon: React.FC<{ name: string; size?: number; color?: string; sw?: number; fill?: string }> = ({ name, size = 44, color = C.ink, sw = 2, fill = "none" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{ICON[name].map((d, i) => <path key={i} d={d} />)}</svg>
 );
 
@@ -293,7 +296,7 @@ export const Bubble: React.FC<{ at0: number; side?: "in" | "out"; children: Reac
 export const CommentCta: React.FC<{ p: number; keyword: string; y: number; wa?: boolean }> = ({ p, keyword, y, wa = true }) => (
   <div style={{ position: "absolute", top: y, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 28, opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}>
     <div dir="rtl" style={{ display: "flex", alignItems: "center", gap: 18, padding: "28px 60px", borderRadius: 999, background: AURORA, boxShadow: "0 30px 80px rgba(255,45,122,.45)", fontFamily: AR, fontWeight: 700, fontSize: 54, color: "#fff" }}>
-      <LineIcon name="chat" size={52} sw={2.2} />كتب <span style={{ fontFamily: SG, letterSpacing: 2 }}>{keyword}</span> فالكومونتير
+      <LineIcon name="chat" size={52} sw={2.2} color="#fff" />كتب <span style={{ fontFamily: SG, letterSpacing: 2 }}>{keyword}</span> فالكومونتير
     </div>
     {wa && <div dir="ltr" style={{ fontFamily: SG, fontWeight: 700, fontSize: 50, color: C.ink, letterSpacing: 1 }}>+212 701 177 915</div>}
     <div style={{ fontFamily: "Inter Tight", fontWeight: 500, fontSize: 36, color: C.muted, letterSpacing: 1 }}>spotlightadz.ma</div>
@@ -314,7 +317,7 @@ import { lightLeak } from "@remotion/effects/light-leak";
 import { fitText } from "@remotion/layout-utils";
 
 // Warm film light leak that blooms over each cut (0.8 s, peaks on the cut). Hue 0 = amber, 60 = brand pink.
-export const LeakCuts: React.FC<{ cuts: number[]; strength?: number }> = ({ cuts, strength = 0.32 }) => {
+export const LeakCuts: React.FC<{ cuts: number[]; strength?: number }> = ({ cuts, strength = 0.35 }) => {
   const f = useCurrentFrame(); const t = f / 30; const { width, height } = useVideoConfig();
   const i = cuts.findIndex((c) => Math.abs(t - c) < 0.3);
   if (i < 0) return null;
@@ -361,7 +364,7 @@ export const FitLine: React.FC<{ text: string; y: number; max?: number; width?: 
 export const SendCta: React.FC<{ p: number; to: string; y: number; wa?: boolean }> = ({ p, to, y, wa = true }) => (
   <div style={{ position: "absolute", top: y, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 26, opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}>
     <div dir="rtl" style={{ display: "flex", alignItems: "center", gap: 18, padding: "28px 56px", borderRadius: 999, background: AURORA, boxShadow: "0 30px 80px rgba(255,45,122,.45)", fontFamily: AR, fontWeight: 700, fontSize: 52, color: "#fff" }}>
-      <LineIcon name="send" size={50} sw={2.2} />صيفطها {to}
+      <LineIcon name="send" size={50} sw={2.2} color="#fff" />صيفطها {to}
     </div>
     {wa && <div dir="ltr" style={{ fontFamily: SG, fontWeight: 700, fontSize: 46, color: C.ink, letterSpacing: 1 }}>+212 701 177 915</div>}
   </div>

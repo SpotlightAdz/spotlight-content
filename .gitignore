@@ -8,3 +8,5 @@ tools/vo5/*.raw
 tools/vo6/*.raw
 tools/vo6/*.wav
 tools/vo6/*.mp3
+tools/skills/animation-skills/kit/node_modules/
+tools/skills/animation-skills/kit/vendor/

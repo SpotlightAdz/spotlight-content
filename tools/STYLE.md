@@ -5,7 +5,7 @@ The bar: every post should look like it came from a top agency's own account, no
 ## Engine
 
 - **Reels and carousels are built in `tools/remotion/`** (React + Remotion, rendered in Chromium). Real web typography, proper Arabic shaping, springs, masks, blur, depth, grain. The old PIL renderers (`render*.py`, `carousel.py`) are legacy: use them only as a fallback.
-- Shared look lives in `tools/remotion/src/brand.tsx`: `Stage` (soft black, moving aurora light, grain, vignette), `Chrome` (progress bar, brand chip, scene index), `Kinetic` (masked word-by-word type), `Captions` (voice-synced, active word lit), `Whip` + `Flash` (cut transitions), `Phone`, `Glass`, `Tag`, `WaButton`.
+- Shared look lives in `tools/remotion/src/brand.tsx`: `Stage` (Sunlit cream studio, moving aurora light, 3D backdrop, grain, soft vignette), `Chrome` (progress bar, brand chip, scene index), `Kinetic` (masked word-by-word type), `Captions` (voice-synced, active word lit), `Whip` + `Flash` (cut transitions), `Phone`, `Glass`, `Tag`, `WaButton`.
 - Reference pieces: `src/reels/RestaurantMistakes.tsx` (dark editorial explainer) and `src/carousels/ReelIdeas.tsx` (editorial carousel, dark cover + paper inner slides).
 - **v2 kit (Nov 2026, in `brand.tsx`)** — use these instead of re-writing scaffolding:
   - `ReelShell` — a whole reel from `{data, audio, scenes[]}`: stage, VO mix, whip cuts on `data.cuts`, flash, synced captions (`capHide(t, scene)`), chrome with optional per-scene index. A new reel is now just its scene components (see `src/reels/BrandMistakes.tsx`, `HappyFitnessSystem.tsx`, `ShootDay.tsx`, `PovBchhal.tsx`, `FollowersMyth.tsx`).
@@ -19,6 +19,22 @@ The bar: every post should look like it came from a top agency's own account, no
 - **Sound v7** (`tools/mix7.py <id> <maghreb|afro|keynote|dark>`): original music generated in code (no song samples): `maghreb` = darbuka doum/tek in a maqsoum feel + oud-like Karplus-Strong plucks in Hijaz on D + 808 sub, the brand's signature bed for Darija reels; `afro` = afro-house; `keynote` = piano/pads; `dark` = minor trap. Real CC0 sounds from Kenney (`tools/sfx/kenney`, licence inside) for UI ticks and the CTA hit. Arrangement: impact under the frame-0 hook, whoosh + UI tick on every cut, music sucked out 0.35 s before the CTA, an untuned reversed cymbal that **peaks exactly on the CTA cut**, then a hit. Voice chain and mastering with Spotify's `pedalboard` (HPF, compressor, presence, limiter); the music ducks 9 dB **and loses 1–4 kHz** while the voice speaks; `pyloudnorm` sets exactly -14 LUFS. `mix6.py` is the previous version.
 - **Reference skills**: the official Remotion agent skills are not vendored (no licence file). At the start of a run: `git clone --depth 1 https://github.com/remotion-dev/skills /tmp/remotion-skills` and read `skills/remotion-best-practices/remotion-markup/{arabic-text,transitions,effects,light-leaks,motion-blur,text-highlights,audio-visualization}.md` when you use those features. `tools/skills/color-expert` is vendored (meodai/skill.color-expert, CC BY 4.0): read its `SKILL.md` when building palettes, ramps or gradients.
 - **Licence note**: Remotion is free for individuals and companies of up to 3 people; bigger companies need a Remotion company licence (remotion.dev/license).
+
+## v4 (15 Nov 2026): Sunlit Studio, real 3D, 4K
+
+**Look: Sunlit Studio** (chosen by the owner; no more black backgrounds). Warm cream studio backdrop `radial-gradient(#FFF8F0 → #F6EADF → #EBD9C9)`, deep plum ink `#1A1222`, muted `#6D5F6E`, glossy aurora accents (pink `#FF2D7A`, amber `#FFB800`, violet `#7B3CF2`, cyan `#22D3EE` sparingly). `C` in `brand.tsx` now holds these values (`C.night` keeps the old black for phone screens and dark UI). Glass = white 60–88% with soft warm shadows; captions = plum words, active word white on the aurora pill. Phones stay dark devices (they pop on cream). Contrast: plum on cream is 15:1; pink/red on cream is display-size only.
+
+**Real 3D** (`src/three/kit3d.tsx`, React Three Fiber via `@remotion/three`, three 0.170):
+- `Stage` now renders `Backdrop3D` by default: glossy torus/spheres/gem/capsule drifting at the frame edges (pass `three={false}` to turn off).
+- `Hero3DText` — big extruded 3D number or Latin word (our Space Grotesk TTF) for hooks and results ("10K", "151.2K", "+400%"). `Text3D`, `Phone3D` (rounded 3D phone, screen = a canvas you draw with `useCanvasTexture`, Arabic works there), `Float`, `Floor` (shadow catcher), materials `gloss()`, `chrome()`, `glass()`, studio reflections from `RoomEnvironment` (no HDR files). `THEMES` has the three looks the owner was shown (sunlit is the one in use).
+- Rules: Arabic always as HTML on top (TextGeometry can't shape Arabic). Any component that uses `Text3D` must call `useTTF()` in the DOM tree and render its `<Stage3D>` only once the font is loaded (R3F does not redraw after a late state change). Shadows are off by default (`<Stage3D shadows>` to enable): they cost render time.
+- Lab: `Look3D` composition (`--props='{"theme":"sunlit"}'`) is the reference frame.
+
+**4K**: final reels render at `--scale=2` (2160×3840): `npx remotion render src/index.ts <Comp> out/<file>.mp4 --scale=2 --concurrency=2 --crf=20 --audio-codec=aac --timeout=180000`. On this 2-core machine that is ≈7 s per frame (≈80 min for a 25 s reel) vs ≈0.9 s at 1080p, so: lock stills first, then queue every reel **sequentially in the background right away** and do carousels/captions while they render. ≈1.8 MB per second of video at crf 20 (GitHub's limit is 100 MB per file; above ~45 s use crf 23). Carousels: `SCALE=2 FMT=jpeg node stills.mjs …` gives 2160×2700. Instagram displays Reels at 1080×1920; the 4K master still gives a cleaner encode and is reusable for ads and the portfolio.
+
+**Independent jury before the full render** (from `tools/skills/mg-styles/rubric.md`, MIT): after the key-frame stills look right, start a sub-agent that did not make the reel, give it the stills/contact sheet and the jury prompt from `rubric.md` (adapted: 9:16, Darija copy, our STYLE rules), get scores (style, concept/hook, motion, design & type, finish, sound, technical) and the top fixes, apply them, then render. `tools/skills/mg-styles/prompts/` has 15 award-level style prompts (flat vector, isometric, 3D render, liquid, morph, Bauhaus, aurora glass, HUD…) to borrow techniques from for new formats.
+
+**Ready-made 3D animation skills** (`tools/skills/animation-skills`, MIT, artemnovitckii): `map-route` (white 3D city, route draws itself, pin + ETA: great for "how to find us" and local delivery), `breakdown` (3D exploded phone with labels: "what's inside our system"), `graph` (growth line + counting number), `minimalistic-graphics`, `stick-figure` and `zach-d-films` (3D cartoon "what if" explainers). They render with HyperFrames: `cd tools/skills/animation-skills/kit && npm install && npm i --no-save gsap@3.12.5 && mkdir -p vendor && cp node_modules/gsap/dist/gsap.min.js vendor/`, then `export HYPERFRAMES_BROWSER_PATH=$(ls -d /opt/pw-browsers/chromium-*/chrome-linux64/chrome | head -1)` and follow each `skills/<name>/SKILL.md`. Restyle them to Sunlit (accent `#FF2D7A`, cream backgrounds) and add our Darija captions/VO in Remotion, or use their mp4 as a scene inside a reel (`<OffthreadVideo>`).
 
 ## What viral Reels and carousels have in common (research, Nov 2026)
 
@@ -37,7 +53,7 @@ What we do with that:
 
 ## Color system
 
-- 60-30-10: 60% night `#06050C` (or paper `#F3EEE7` on carousels), 30% ink/glass, 10% aurora accent. One gradient word per line.
+- 60-30-10: 60% cream studio (or paper `#F3EEE7` on carousels), 30% plum ink/white glass, 10% aurora accent. One gradient word per line.
 - Contrast is checked with `python3 tools/contrast.py`: ink, muted, amber, red, pink and cyan pass AA on night; **violet `#7B3CF2` on night is display-size only**; red/pink on paper are display-size only (headlines ≥ 60 px, never body). **White on WhatsApp green `#25D366` fails (1.98:1)**: buttons with white text use `C.waDeep` `#0E7A43`; keep `#25D366` for icons and checkmarks.
 - Gradients run in OKLCH-like order (amber → red → pink → violet → cyan); never put cyan next to amber without the pink/violet between (muddy midpoint).
 - Each reel may pick one **signature accent** for its hero (amber for money/results, pink for social, cyan for tech/AI, green only for WhatsApp), so the feed reads as a varied but coherent grid.
@@ -69,7 +85,7 @@ What we do with that:
 - Margins 70–90 px. Align to a center axis or a hard right edge (RTL), never both in one scene.
 - Keep a lone "و" glued to the next word (`nbsp()` or a non-breaking space) so it never ends a line. Don't use «» around Arabic words in RTL blocks: they mirror and read backwards.
 - Max 2 type sizes per scene plus captions. Readex Pro for Arabic, Space Grotesk for numbers and Latin.
-- Brand colors only: #06050C, aurora #FFB800 → #FF3D2E → #FF2D7A → #7B3CF2 → #22D3EE, ink #FBF8F5, WhatsApp green only for chat/CTA.
+- Brand colors only (Sunlit Studio): cream backdrop, plum ink #1A1222, aurora accents #FFB800 → #FF3D2E → #FF2D7A → #7B3CF2 → #22D3EE, WhatsApp green only for chat/CTA. The old black #06050C is only for device screens and dark UI inside phones.
 
 ## Quality gate (before the full render)
 

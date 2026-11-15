@@ -41,14 +41,14 @@ const Env: React.FC<{ intensity?: number }> = ({ intensity = 1 }) => {
   return null;
 };
 
-export const Stage3D: React.FC<{ children: React.ReactNode; camZ?: number; fov?: number; camY?: number }> = ({ children, camZ = 9, fov = 30, camY = 0 }) => {
+export const Stage3D: React.FC<{ children: React.ReactNode; camZ?: number; fov?: number; camY?: number; shadows?: boolean }> = ({ children, camZ = 9, fov = 30, camY = 0, shadows = false }) => {
   const { width, height } = useVideoConfig();
   return (
     <ThreeCanvas width={width} height={height} style={{ position: "absolute", inset: 0 }} gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
-      camera={{ fov, position: [0, camY, camZ], near: 0.1, far: 100 }} shadows>
+      camera={{ fov, position: [0, camY, camZ], near: 0.1, far: 100 }} shadows={shadows}>
       <Env />
       <ambientLight intensity={0.35} />
-      <directionalLight position={[3, 6, 5]} intensity={2.2} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+      <directionalLight position={[3, 6, 5]} intensity={2.2} castShadow={shadows} shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <directionalLight position={[-5, 2, 3]} intensity={0.7} color="#ffd9e8" />
       <pointLight position={[0, -2, 4]} intensity={8} color="#ff7ab0" distance={12} />
       {children}
@@ -132,4 +132,44 @@ export const useCanvasTexture = (w: number, h: number, draw: (ctx: CanvasRenderi
 export const Float: React.FC<{ children: React.ReactNode; seed?: number; amp?: number; position?: [number, number, number] }> = ({ children, seed = 0, amp = 0.12, position = [0, 0, 0] }) => {
   const f = useCurrentFrame(); const t = f / 30;
   return <group position={[position[0], position[1] + Math.sin(t * 1.3 + seed) * amp, position[2]]} rotation={[Math.sin(t * 0.7 + seed) * 0.25, t * 0.5 + seed, Math.cos(t * 0.6 + seed) * 0.2]}>{children}</group>;
+};
+
+// Sunlit backdrop: a few glossy aurora shapes drifting at the edges of the frame (behind all content),
+// so every reel has real depth. Kept out of the text column (x -1.2..1.2 at z 0 is left mostly clear).
+export const Backdrop3D: React.FC<{ seed?: number }> = ({ seed = 0 }) => {
+  const f = useCurrentFrame(); const t = f / 30;
+  const mats = useMemo(() => ({
+    pink: gloss("#FF4F8F"), amber: gloss("#FFC23D"), violet: gloss("#8B55F5"), chrome: chrome("#ffeef4"), glassy: glass("#ffe3ee"),
+  }), []);
+  const items: [string, React.ReactNode, [number, number, number], number][] = [
+    ["pink", <torusGeometry args={[0.45, 0.17, 32, 80]} />, [-2.35, 3.05, -3], 0],
+    ["amber", <sphereGeometry args={[0.36, 48, 48]} />, [2.45, 3.35, -2.5], 1],
+    ["violet", <icosahedronGeometry args={[0.36, 0]} />, [-2.5, -3.2, -2.2], 2],
+    ["chrome", <sphereGeometry args={[0.26, 48, 48]} />, [2.35, -3.9, -1.5], 3],
+    ["pink", <capsuleGeometry args={[0.16, 0.5, 8, 24]} />, [2.55, -0.9, -3.5], 4],
+  ];
+  return (
+    <Stage3D camZ={16} fov={30}>
+      {items.map(([m, geo, p, k]) => (
+        <group key={k} position={[p[0] + Math.sin(t * 0.3 + k + seed) * 0.15, p[1] + Math.sin(t * 0.8 + k * 1.7 + seed) * 0.25, p[2]]}
+          rotation={[t * 0.25 + k, t * 0.35 + k * 2, 0]}>
+          <mesh material={(mats as any)[m]} castShadow>{geo}</mesh>
+        </group>
+      ))}
+    </Stage3D>
+  );
+};
+
+// Big extruded 3D word/number as a full-frame layer. y in world units (0 = centre, +3 ≈ top third).
+export const Hero3DText: React.FC<{ text: string; color: string; y?: number; size?: number; spin?: number; enter?: number }> = ({ text, color, y = 0.9, size = 1.5, spin = 0.12, enter = 1 }) => {
+  const font = useTTF();
+  const f = useCurrentFrame(); const t = f / 30;
+  const mat = useMemo(() => gloss(color, { metalness: 0.15 }), [color]);
+  if (!font) return null;
+  return (
+    <Stage3D camZ={17 - t * 0.15} fov={30}>
+      <Text3D text={text} size={size} depth={size * 0.36} material={mat} position={[0, y, 0]} scale={0.85 + 0.15 * enter}
+        rotation={[0.08, -0.3 * (1 - enter) - 0.18 + Math.sin(t * 0.8) * spin, 0]} />
+    </Stage3D>
+  );
 };
