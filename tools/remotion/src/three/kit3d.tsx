@@ -142,8 +142,8 @@ export const Backdrop3D: React.FC<{ seed?: number }> = ({ seed = 0 }) => {
     pink: gloss("#FF4F8F"), amber: gloss("#FFC23D"), violet: gloss("#8B55F5"), chrome: chrome("#ffeef4"), glassy: glass("#ffe3ee"),
   }), []);
   const items: [string, React.ReactNode, [number, number, number], number][] = [
-    ["pink", <torusGeometry args={[0.45, 0.17, 32, 80]} />, [-2.35, 3.05, -3], 0],
-    ["amber", <sphereGeometry args={[0.36, 48, 48]} />, [2.45, 3.35, -2.5], 1],
+    ["pink", <torusGeometry args={[0.42, 0.16, 32, 80]} />, [-2.75, 0.9, -3], 0],
+    ["amber", <sphereGeometry args={[0.34, 48, 48]} />, [2.7, 1.9, -2.5], 1],
     ["violet", <icosahedronGeometry args={[0.36, 0]} />, [-2.5, -3.2, -2.2], 2],
     ["chrome", <sphereGeometry args={[0.26, 48, 48]} />, [2.35, -3.9, -1.5], 3],
     ["pink", <capsuleGeometry args={[0.16, 0.5, 8, 24]} />, [2.55, -0.9, -3.5], 4],
