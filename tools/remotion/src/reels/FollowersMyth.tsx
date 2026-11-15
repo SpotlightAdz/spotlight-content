@@ -13,8 +13,8 @@ const Hook: React.FC = () => {
   return (
     <AbsoluteFill>
       <Kinetic words={["خاصك"]} instant start={0} y={260} size={110} />
-      <div style={{ position: "absolute", inset: 0, opacity: 1 - 0.55 * st }}><Hero3DText text="10K" color="#FF2D7A" y={1.15} size={1.85} enter={s} /></div>
-      <Kinetic words={["متابع", "باش", "تبيع؟"]} instant start={0} y={900} size={110} />
+      <div style={{ position: "absolute", inset: 0, opacity: 1 - 0.55 * st }}><Hero3DText text="10K" color="#FF2D7A" y={1.3} size={1.6} enter={s} /></div>
+      <Kinetic words={["متابع", "باش", "تبيع؟"]} instant start={0} y={960} size={110} />
       {/* NO stamp */}
       <div style={{ position: "absolute", top: 470, left: 0, right: 0, display: "flex", justifyContent: "center", opacity: Math.min(1, st * 2), transform: `rotate(-10deg) scale(${2.2 - 1.2 * st})` }}>
         <div dir="rtl" style={{ padding: "10px 70px 30px", border: `12px solid ${C.red}`, borderRadius: 40, fontFamily: AR, fontWeight: 700, fontSize: 230, lineHeight: 1.1, color: C.red, background: "rgba(255,248,240,.92)", boxShadow: `0 20px 60px rgba(255,61,46,.30)` }}>لا</div>
