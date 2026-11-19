@@ -271,6 +271,13 @@ export const ICON: Record<string, string[]> = {
   grid: ["M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"],
   sparkle: ["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", "M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"],
   check: ["M5 12.5l4.5 4.5L19 7.5"],
+  moon: ["M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"],
+  gift: ["M20 12v10H4V12M2 7h20v5H2zM12 22V7", "M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"],
+  target: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z", "M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"],
+  clock: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M12 6v6l4 2"],
+  star: ["M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2 1.2-6.8-5-4.9 6.9-1z"],
+  bulb: ["M9 18h6M10 22h4", "M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"],
+  window: ["M3 3h18v18H3zM12 3v18M3 12h18"],
   globe: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"],
 };
 export const LineIcon: React.FC<{ name: string; size?: number; color?: string; sw?: number; fill?: string }> = ({ name, size = 44, color = C.ink, sw = 2, fill = "none" }) => (
@@ -369,3 +376,58 @@ export const SendCta: React.FC<{ p: number; to: string; y: number; wa?: boolean 
     {wa && <div dir="ltr" style={{ fontFamily: SG, fontWeight: 700, fontSize: 46, color: C.ink, letterSpacing: 1 }}>+212 701 177 915</div>}
   </div>
 );
+
+// =====================================================================
+// v5 kit (19 Nov 2026): stamp, browser mockup, save CTA, result card.
+// =====================================================================
+
+// Rubber stamp that slams in (scale 2 → 1, slight rotation). p = spring 0..1.
+export const Stamp: React.FC<{ p: number; children: React.ReactNode; color?: string; x?: number; y: number; rot?: number; size?: number }> = ({ p, children, color = C.red, x, y, rot = -10, size = 120 }) => (
+  <div style={{ position: "absolute", top: y, ...(x !== undefined ? { left: x } : { left: 0, right: 0 }), display: "flex", justifyContent: "center", opacity: Math.min(1, p * 2), transform: `rotate(${rot}deg) scale(${2.1 - 1.1 * p})` }}>
+    <div dir="rtl" style={{ padding: `${size * 0.06}px ${size * 0.4}px ${size * 0.16}px`, border: `${Math.max(6, size * 0.07)}px solid ${color}`, borderRadius: size * 0.22, fontFamily: AR, fontWeight: 700, fontSize: size, lineHeight: 1.15, color,
+      background: "rgba(255,248,240,.92)", boxShadow: `0 18px 50px ${color}44` }}>{children}</div>
+  </div>
+);
+
+// Browser window mockup (light UI) with a URL bar; children = page content. Use for website/web-product scenes.
+export const Browser: React.FC<{ x: number; y: number; w: number; h: number; url?: string; p?: number; tilt?: number; children?: React.ReactNode }> = ({ x, y, w, h, url = "yourshop.ma", p = 1, tilt = 0, children }) => (
+  <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 30, overflow: "hidden", background: "#fff", opacity: p,
+    boxShadow: "0 50px 110px rgba(90,50,40,.28), 0 10px 24px rgba(90,50,40,.14), inset 0 0 0 1.5px rgba(26,18,34,.08)",
+    transform: `perspective(1800px) translateY(${(1 - p) * 120}px) rotateX(${(1 - p) * 14}deg) rotateY(${tilt}deg)` }}>
+    <div style={{ height: 74, background: "#F4EFEA", display: "flex", alignItems: "center", gap: 12, padding: "0 26px", borderBottom: "1.5px solid rgba(26,18,34,.08)" }}>
+      {["#FF5F57", "#FEBC2E", "#28C840"].map((c) => <div key={c} style={{ width: 18, height: 18, borderRadius: 9, background: c }} />)}
+      <div dir="ltr" style={{ marginLeft: 22, flex: 1, height: 42, borderRadius: 21, background: "#fff", display: "flex", alignItems: "center", gap: 10, padding: "0 20px", fontFamily: SG, fontWeight: 500, fontSize: 24, color: C.muted }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.4"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>{url}
+      </div>
+    </div>
+    <div style={{ position: "relative", height: h - 74 }}>{children}</div>
+  </div>
+);
+
+// "Save this" CTA (bookmark icon pill). Use when the reel is a how-to people come back to.
+export const SaveCta: React.FC<{ p: number; label: string; y: number; sub?: string }> = ({ p, label, y, sub }) => (
+  <div style={{ position: "absolute", top: y, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 26, opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}>
+    <div dir="rtl" style={{ display: "flex", alignItems: "center", gap: 18, padding: "28px 60px", borderRadius: 999, background: AURORA, boxShadow: "0 30px 80px rgba(255,45,122,.45)", fontFamily: AR, fontWeight: 700, fontSize: 54, color: "#fff" }}>
+      <LineIcon name="save" size={50} sw={2.2} color="#fff" />{label}
+    </div>
+    {sub && <div dir="rtl" style={{ fontFamily: AR, fontWeight: 600, fontSize: 40, color: C.muted }}>{sub}</div>}
+  </div>
+);
+
+// Client result card: brand line (Latin) + handle, giant count-up number, Darija label. Proof scenes in result reels.
+export const ResultCard: React.FC<{ name: string; handle?: string; to: number; fmt: (v: number) => string; label: string; y?: number; g?: string; start?: number }> =
+  ({ name, handle, to, fmt, label, y = 430, g = HOT, start = 6 }) => {
+    const f = useCurrentFrame();
+    const p = useSpring(0, 15);
+    return (
+      <div style={{ position: "absolute", top: y, left: 90, right: 90, opacity: p, transform: `translateY(${(1 - p) * 70}px) scale(${0.94 + 0.06 * p})` }}>
+        <Glass style={{ padding: "44px 40px 50px", textAlign: "center", position: "relative", height: 600 }}>
+          <div style={{ fontFamily: SG, fontWeight: 700, fontSize: 58, color: C.ink, letterSpacing: -1 }}>{name}</div>
+          {handle && <div style={{ fontFamily: SG, fontWeight: 500, fontSize: 30, color: C.muted, marginTop: 6 }}>{handle}</div>}
+          <div style={{ height: 2, background: C.line, margin: "28px 60px 0" }} />
+          <Counter to={to} fmt={fmt} start={start} dur={40} size={210} y={210} g={g} />
+          <div dir="rtl" style={{ position: "absolute", left: 0, right: 0, top: 470, fontFamily: AR, fontWeight: 600, fontSize: 50, color: C.ink, opacity: at(f, start + 24, 14) }}>{label}</div>
+        </Glass>
+      </div>
+    );
+  };

@@ -36,15 +36,15 @@ export const Dark: React.FC<{ series: string; i: number; n: number; glow?: "cove
 );
 
 // Paper editorial slide: ghost number, kicker, headline, gradient sub, rule, body, line icon.
-export const PaperStep: React.FC<{ series: string; i: number; n: number; kicker: string; title: string; sub: string; body: string; icon: string; note?: string }> =
-  ({ series, i, n, kicker, title, sub, body, icon, note = "سيف البوست · صيفطو لشي صاحب عندو بيزنس" }) => (
+export const PaperStep: React.FC<{ series: string; i: number; n: number; kicker: string; title: string; sub: string; body: string; icon: string; note?: string; ghost?: string }> =
+  ({ series, i, n, kicker, title, sub, body, icon, note = "سيف البوست · صيفطو لشي صاحب عندو بيزنس", ghost }) => (
     <AbsoluteFill style={{ background: PAPER }}>
       <Header series={series} i={i} n={n} />
-      <div style={{ position: "absolute", top: 120, left: 60, fontFamily: SG, fontWeight: 700, fontSize: 420, lineHeight: 1, WebkitTextStroke: `3px ${INK}`, color: "transparent", opacity: 0.12 }}>{String(i).padStart(2, "0")}</div>
+      <div style={{ position: "absolute", top: 120, left: 60, fontFamily: SG, fontWeight: 700, fontSize: 420, lineHeight: 1, WebkitTextStroke: `3px ${INK}`, color: "transparent", opacity: 0.12 }}>{ghost ?? String(i).padStart(2, "0")}</div>
       <div style={{ position: "absolute", top: 190, right: 90 }}><LineIcon name={icon} size={230} color={INK} sw={0.9} /></div>
       <div dir="rtl" style={{ position: "absolute", top: 520, left: 90, right: 90, fontFamily: AR, color: INK }}>
         <div style={{ fontFamily: SG, fontWeight: 700, fontSize: 30, letterSpacing: 4 }}><Grad g={HOT}>{kicker}</Grad></div>
-        <div style={{ fontWeight: 700, fontSize: 112, lineHeight: 1.15, marginTop: 14 }}>{title}</div>
+        <div style={{ fontWeight: 700, fontSize: title.length > 17 ? 78 : title.length > 12 ? 90 : 112, lineHeight: 1.15, marginTop: 14, whiteSpace: "nowrap" }}>{title}</div>
         <div style={{ fontWeight: 600, fontSize: 50, lineHeight: 1.3, marginTop: 10 }}><Grad g={HOT}>{sub}</Grad></div>
         <div style={{ height: 2, background: "rgba(18,16,24,.15)", margin: "40px 0 32px" }} />
         <div style={{ fontWeight: 500, fontSize: 44, lineHeight: 1.6, color: "#3b3742" }}>{nbsp(body)}</div>

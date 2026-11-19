@@ -20,6 +20,16 @@ The bar: every post should look like it came from a top agency's own account, no
 - **Reference skills**: the official Remotion agent skills are not vendored (no licence file). At the start of a run: `git clone --depth 1 https://github.com/remotion-dev/skills /tmp/remotion-skills` and read `skills/remotion-best-practices/remotion-markup/{arabic-text,transitions,effects,light-leaks,motion-blur,text-highlights,audio-visualization}.md` when you use those features. `tools/skills/color-expert` is vendored (meodai/skill.color-expert, CC BY 4.0): read its `SKILL.md` when building palettes, ramps or gradients.
 - **Licence note**: Remotion is free for individuals and companies of up to 3 people; bigger companies need a Remotion company licence (remotion.dev/license).
 
+## v5 kit (19 Nov 2026)
+
+- `brand.tsx`: `Stamp` (rubber stamp slam, e.g. "والو" on a zero result), `Browser` (light browser window with URL bar for website/web-product scenes), `SaveCta` (bookmark pill for how-to reels), `ResultCard` (client name + handle, count-up number, Darija label: proof scenes). New icons: `moon`, `gift`, `target`, `clock`, `star`, `bulb`, `window`.
+- `src/mixed/props.tsx`: flat props in the Character style: `GiftBox` (lid opens with `open` 0..1), `Mug` (animated steam, wavy pattern: a generic product for how-to reels), `ShopBox` (isometric product box), `PriceTag` (paper tag, HTML text).
+- Carousels: `PaperStep` takes `ghost` (the big outline number; pass the step number, not the slide index) and auto-sizes long titles to one line (> 12 chars 90 px, > 17 chars 78 px). Keep inner-slide titles ≤ 20 characters.
+- Captions: Latin names (client names) must be ONE caption token, or the RTL flex reverses them ("Fitness: Happy"). After `align.py`, merge consecutive Latin words in the JSON, and move a line-final "و" to the next line (see the w4 notes in `tools/vo6`).
+- Bidi: never let "فـ" + a Latin word break across lines in a headline; write the headline in Arabic only or put the Latin on its own line (`dir="ltr"`). Inside mixed lines wrap Latin in `display: inline-block` spans.
+- Layout: a `Phone` 500 px wide is 1025 px tall; on scenes with captions keep `w ≤ 440` at `y ≈ 490` so it ends above the caption band (y 1420).
+- Rendering: never run `stills.mjs` while a full render is compiling its first light-leak frame; the WebGL shader compile can exceed the timeout (`delayRender "Solid effect chain"`). Renders now use `--timeout=300000`.
+
 ## Mixed-media montage (owner's direction, 15 Nov 2026): switch medium every scene
 
 The owner wants reels where the viewer never gets bored: **each scene uses a different medium**, all inside the Sunlit look. Reference: `src/reels/BchhalMontage.tsx`.
