@@ -75,7 +75,8 @@ const Insights: React.FC = () => {
   );
   return (
     <AbsoluteFill>
-      <SceneHead kicker={<Num n="02" label="الغلطة" />} words={["اللايكات", "ماشي", "مبيعات"]} hi={[2]} size={84} />
+      <div style={{ position: "absolute", top: 230, left: 0, right: 0, display: "flex", justifyContent: "center" }}><Tag p={at(f, 0, 12)}><Num n="02" label="الغلطة" /></Tag></div>
+      <FitLine text="اللايكات ماشي مبيعات" y={330} max={96} width={860} p={at(f, 3, 12)} />
       <Phone x={540} y={500} w={520} p={p} tilt={-6}>
         <div style={{ padding: "90px 34px 0", display: "flex", flexDirection: "column", gap: 22 }}>
           <div style={{ fontFamily: SG, fontWeight: 700, fontSize: 30, color: "rgba(255,255,255,.6)", letterSpacing: 3 }}>AD RESULTS</div>
