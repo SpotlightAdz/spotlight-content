@@ -29,6 +29,17 @@ import { PhoneShots } from "./reels/PhoneShots";
 import S5 from "./reels/S5.json";
 import { MapsChecklist, MAPS_SLIDES, AgencyQuestions, AGENCY_SLIDES } from "./carousels/W4Carousels";
 import { ReelIdeas, REEL_IDEAS_SLIDES } from "./carousels/ReelIdeas";
+import { EditDay } from "./reels/EditDay";
+import T1 from "./reels/T1.json";
+import { WaSettings, WA_SLIDES, CaftanCase, CAFTAN_SLIDES } from "./carousels/D1Carousels";
+import { WYogaStory } from "./reels/WYogaStory";
+import T2 from "./reels/T2.json";
+import { StoryMistakes } from "./reels/StoryMistakes";
+import T3 from "./reels/T3.json";
+import { PovOneMan } from "./reels/PovOneMan";
+import T4 from "./reels/T4.json";
+import { ReportPack } from "./reels/ReportPack";
+import T5 from "./reels/T5.json";
 
 export const Root: React.FC = () => (
   <>
@@ -51,5 +62,12 @@ export const Root: React.FC = () => (
     <Composition id="PhoneShots" component={PhoneShots} durationInFrames={Math.round(S5.total * 30)} fps={30} width={1080} height={1920} />
     <Composition id="MapsChecklist" component={MapsChecklist} durationInFrames={MAPS_SLIDES} fps={30} width={1080} height={1350} />
     <Composition id="AgencyQuestions" component={AgencyQuestions} durationInFrames={AGENCY_SLIDES} fps={30} width={1080} height={1350} />
+    <Composition id="EditDay" component={EditDay} durationInFrames={Math.round(T1.total * 30)} fps={30} width={1080} height={1920} />
+    <Composition id="WYogaStory" component={WYogaStory} durationInFrames={Math.round(T2.total * 30)} fps={30} width={1080} height={1920} />
+    <Composition id="StoryMistakes" component={StoryMistakes} durationInFrames={Math.round(T3.total * 30)} fps={30} width={1080} height={1920} />
+    <Composition id="PovOneMan" component={PovOneMan} durationInFrames={Math.round(T4.total * 30)} fps={30} width={1080} height={1920} />
+    <Composition id="ReportPack" component={ReportPack} durationInFrames={Math.round(T5.total * 30)} fps={30} width={1080} height={1920} />
+    <Composition id="WaSettings" component={WaSettings} durationInFrames={WA_SLIDES} fps={30} width={1080} height={1350} />
+    <Composition id="CaftanCase" component={CaftanCase} durationInFrames={CAFTAN_SLIDES} fps={30} width={1080} height={1350} />
   </>
 );

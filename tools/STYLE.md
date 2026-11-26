@@ -30,6 +30,15 @@ The bar: every post should look like it came from a top agency's own account, no
 - Layout: a `Phone` 500 px wide is 1025 px tall; on scenes with captions keep `w ≤ 440` at `y ≈ 490` so it ends above the caption band (y 1420).
 - Rendering: never run `stills.mjs` while a full render is compiling its first light-leak frame; the WebGL shader compile can exceed the timeout (`delayRender "Solid effect chain"`). Renders now use `--timeout=300000`.
 
+## v6 kit (26 Nov 2026)
+
+- `brand.tsx`: `StoryBars` (Instagram story progress bars, inside a phone or full-frame with `dark={false}`), `BeforeAfter` (wipe between a filtered "قبل" copy and the real one: colour grading, retouch, redesign), `Bars` (bar chart that grows, one gradient bar = the winner), `Waveform` (animated audio strip), `Fader` (mixer fader for sound scenes), `PollSticker` (story poll with vote fill). New icons: `film`, `palette`, `chart`, `eye`, `phone`, `layers`, `store`, `card`, `box`.
+- Dec w1 reels: `EditDay` (BTS part 2: take picker, colour wipe, paper mixing desk, phone check), `WYogaStory` (result: 3D number, browser platform, receipt + stamp, night notifications), `StoryMistakes`, `PovOneMan` (clock-tag day structure + editorial "Basic pack" page), `ReportPack` (report, KPI dashboard, 3D price hero). Carousels in `src/carousels/D1Carousels.tsx` (`WaSettings` steps, `CaftanCase` case study with module grid on slide 2).
+- `Hero3DText`: keep `size` ≤ 1.5 for 3–4 characters at y 0–0.5, bigger sizes clip the frame edges at frame 0 (the entrance starts at full width). Text under it goes at y ≥ 1050.
+- A `Character` on a scene with captions: feet must stay above y ≈ 1300 (`y ≤ 1230` at scale ≤ 0.75), or its legs cover the caption pill.
+- Bidi: don't put "/" or parentheses next to Latin inside Arabic body copy ("(POS)", "بـ /"): they reorder. Use "POS · …" in a sub-line instead.
+- Emoji don't render in Readex: never put emoji in on-screen text.
+
 ## Mixed-media montage (owner's direction, 15 Nov 2026): switch medium every scene
 
 The owner wants reels where the viewer never gets bored: **each scene uses a different medium**, all inside the Sunlit look. Reference: `src/reels/BchhalMontage.tsx`.

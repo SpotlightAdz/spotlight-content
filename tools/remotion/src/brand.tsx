@@ -279,6 +279,15 @@ export const ICON: Record<string, string[]> = {
   bulb: ["M9 18h6M10 22h4", "M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"],
   window: ["M3 3h18v18H3zM12 3v18M3 12h18"],
   globe: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"],
+  film: ["M3 4h18v16H3z", "M7 4v16M17 4v16M3 8h4M3 12h4M3 16h4M17 8h4M17 12h4M17 16h4"],
+  palette: ["M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1-.8-1.4-.8-2.4 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4c0-4.7-4-8.4-9-8.4z", "M7.5 11.5h.01M10 7.5h.01M15 7.5h.01"],
+  chart: ["M3 21h18", "M6 17v-5M11 17V7M16 17v-8M21 17V4"],
+  eye: ["M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"],
+  phone: ["M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z", "M11 18h2"],
+  layers: ["M12 2 2 7l10 5 10-5-10-5z", "M2 17l10 5 10-5M2 12l10 5 10-5"],
+  store: ["M3 9l1.5-5h15L21 9", "M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z", "M5 13v8h14v-8M10 21v-5h4v5"],
+  card: ["M2 5h20v14H2z", "M2 10h20M6 15h4"],
+  box: ["M21 8l-9-5-9 5 9 5 9-5z", "M3 8v8l9 5 9-5V8M12 13v8"],
 };
 export const LineIcon: React.FC<{ name: string; size?: number; color?: string; sw?: number; fill?: string }> = ({ name, size = 44, color = C.ink, sw = 2, fill = "none" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{ICON[name].map((d, i) => <path key={i} d={d} />)}</svg>
@@ -431,3 +440,92 @@ export const ResultCard: React.FC<{ name: string; handle?: string; to: number; f
       </div>
     );
   };
+
+// =====================================================================
+// v6 kit (26 Nov 2026): story bars, before/after wipe, animated bars, waveform, fader, poll sticker.
+// =====================================================================
+
+// Instagram-story progress bars (n segments, `active` index fills by `p` 0..1). Put inside a Phone screen or full-frame.
+export const StoryBars: React.FC<{ n: number; active: number; p: number; top?: number; inset?: number; dark?: boolean }> = ({ n, active, p, top = 60, inset = 24, dark = true }) => (
+  <div style={{ position: "absolute", top, left: inset, right: inset, display: "flex", gap: 6 }}>
+    {[...Array(n)].map((_, i) => (
+      <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: dark ? "rgba(255,255,255,.3)" : "rgba(26,18,34,.15)", overflow: "hidden" }}>
+        <div style={{ width: `${i < active ? 100 : i === active ? p * 100 : 0}%`, height: "100%", background: dark ? "#fff" : C.ink }} />
+      </div>
+    ))}
+  </div>
+);
+
+// Before/after wipe: renders `children` twice, the left part through `before` CSS filter, a handle at `p` (0..1 from right to left in RTL feel).
+export const BeforeAfter: React.FC<{ x: number; y: number; w: number; h: number; p: number; before?: string; labels?: [string, string]; children: React.ReactNode }> =
+  ({ x, y, w, h, p, before = "saturate(.15) brightness(.82) contrast(.85)", labels = ["قبل", "من بعد"], children }) => {
+    const cut = w * (1 - p);
+    return (
+      <div style={{ position: "absolute", left: x, top: y, width: w, height: h, borderRadius: 34, overflow: "hidden", boxShadow: "0 40px 90px rgba(90,50,40,.25)" }}>
+        <div style={{ position: "absolute", inset: 0 }}>{children}</div>
+        <div style={{ position: "absolute", inset: 0, filter: before, clipPath: `inset(0 ${w - cut}px 0 0)` }}>{children}</div>
+        <div style={{ position: "absolute", top: 0, bottom: 0, left: cut - 3, width: 6, background: "#fff", boxShadow: "0 0 20px rgba(0,0,0,.25)" }}>
+          <div style={{ position: "absolute", top: h / 2 - 36, left: -33, width: 72, height: 72, borderRadius: 36, background: "#fff", boxShadow: "0 10px 30px rgba(0,0,0,.25)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SG, fontWeight: 700, fontSize: 30, color: C.ink }}>‹›</div>
+        </div>
+        {[0, 1].map((k) => (
+          <div key={k} dir="rtl" style={{ position: "absolute", top: 24, [k ? "right" : "left"]: 24, padding: "8px 22px", borderRadius: 99, background: k ? AURORA : "rgba(26,18,34,.7)", color: "#fff", fontFamily: AR, fontWeight: 700, fontSize: 30 } as React.CSSProperties}>{labels[k]}</div>
+        ))}
+      </div>
+    );
+  };
+
+// Vertical bar chart that grows from the base. values 0..1, labels under each bar, `hi` index gets the gradient.
+export const Bars: React.FC<{ values: number[]; labels?: string[]; p: number; h?: number; hi?: number; w?: number; color?: string }> = ({ values, labels, p, h = 360, hi = -1, w = 64, color = "rgba(26,18,34,.18)" }) => (
+  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", height: h + 50 }}>
+    {values.map((v, i) => {
+      const q = interpolate(p, [i * 0.08, i * 0.08 + 0.6], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
+      return (
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div style={{ width: w, height: h * v * q, borderRadius: 14, background: i === hi ? AURORA : color, boxShadow: i === hi ? "0 16px 40px rgba(255,45,122,.35)" : "none" }} />
+          {labels && <div style={{ fontFamily: SG, fontWeight: 500, fontSize: 24, color: C.muted }}>{labels[i]}</div>}
+        </div>
+      );
+    })}
+  </div>
+);
+
+// Audio waveform strip (deterministic), height scaled by `level` 0..1, scrolls with the frame.
+export const Waveform: React.FC<{ w: number; h: number; level: number; color?: string; bars?: number; seed?: number }> = ({ w, h, level, color = C.pink, bars = 48, seed = 1 }) => {
+  const f = useCurrentFrame();
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      {[...Array(bars)].map((_, i) => {
+        const a = 0.2 + Math.abs(Math.sin(i * 1.3 + seed + f * 0.18) * Math.cos(i * 0.37 + f * 0.07)) * 0.8;
+        const bh = Math.max(6, a * h * level);
+        return <rect key={i} x={(i * w) / bars + 2} y={(h - bh) / 2} width={w / bars - 4} height={bh} rx={(w / bars - 4) / 2} fill={color} />;
+      })}
+    </svg>
+  );
+};
+
+// Mixer fader (vertical): label, track, knob at `v` 0..1.
+export const Fader: React.FC<{ v: number; label: string; color?: string; h?: number }> = ({ v, label, color = C.pink, h = 420 }) => (
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
+    <div style={{ position: "relative", width: 90, height: h }}>
+      <div style={{ position: "absolute", left: 38, top: 0, bottom: 0, width: 14, borderRadius: 7, background: "rgba(26,18,34,.12)" }} />
+      <div style={{ position: "absolute", left: 38, bottom: 0, height: h * v, width: 14, borderRadius: 7, background: color }} />
+      <div style={{ position: "absolute", left: 0, bottom: h * v - 26, width: 90, height: 52, borderRadius: 14, background: "#fff", border: `5px solid ${C.ink}`, boxShadow: "0 10px 24px rgba(0,0,0,.18)" }} />
+    </div>
+    <div dir="rtl" style={{ fontFamily: AR, fontWeight: 700, fontSize: 38, color: C.ink }}>{label}</div>
+  </div>
+);
+
+// Story poll sticker (white card, question + two options with %). p = entrance, vote = 0..1 fills the results.
+export const PollSticker: React.FC<{ q: string; a: string; b: string; p: number; vote?: number; pa?: number; w?: number }> = ({ q, a, b, p, vote = 0, pa = 0.7, w = 380 }) => (
+  <div dir="rtl" style={{ width: w, padding: "22px 20px", borderRadius: 26, background: "#fff", boxShadow: "0 18px 40px rgba(0,0,0,.25)", opacity: p, transform: `scale(${0.7 + 0.3 * p}) rotate(-3deg)` }}>
+    <div style={{ fontFamily: AR, fontWeight: 700, fontSize: 30, color: C.ink, textAlign: "center", marginBottom: 14 }}>{q}</div>
+    {[[a, pa], [b, 1 - pa]].map(([t, v], i) => (
+      <div key={i} style={{ position: "relative", height: 58, borderRadius: 16, background: "#F1ECE8", marginTop: i ? 10 : 0, overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: `${(v as number) * 100 * vote}%`, background: i ? "rgba(123,60,242,.25)" : "rgba(255,45,122,.3)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 18px", fontFamily: AR, fontWeight: 600, fontSize: 28, color: C.ink }}>
+          <span>{t as string}</span><span dir="ltr" style={{ fontFamily: SG, fontWeight: 700, opacity: vote }}>{Math.round((v as number) * 100 * vote)}%</span>
+        </div>
+      </div>
+    ))}
+  </div>
+);
